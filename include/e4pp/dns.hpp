@@ -1,0 +1,109 @@
+#pragma once
+
+#include "e4pp/e4pp.hpp"
+#include "event2/dns.h"
+
+namespace e4pp {
+
+using dns_handle_type = evdns_base*;
+
+class dns
+{
+public:
+    using handle_type = dns_handle_type;
+    constexpr static int def_opt =
+        { EVDNS_BASE_INITIALIZE_NAMESERVERS|
+            EVDNS_BASE_DISABLE_WHEN_INACTIVE };
+
+private:
+    handle_type handle_{ nullptr };
+
+    handle_type assert_handle() const noexcept
+    {
+        auto h = handle();
+        assert(h);
+        return h;
+    }
+
+public:
+    explicit dns(handle_type handle)
+        : handle_{ handle }
+    {
+        assert(handle);
+        randomize_case("0");
+    }
+
+    dns(queue_handle_type queue, int opt = def_opt) 
+        : dns{ detail::check_pointer("evdns_base_new", 
+            evdns_base_new(queue, opt)) }
+    {   }
+
+    dns(const dns&) = delete;
+    dns& operator=(const dns&) = delete;
+
+    dns(dns&& that) noexcept
+    {
+        assert(this != &that);
+        std::swap(handle_, that.handle_);
+    }
+
+    dns& operator=(dns&& that) noexcept
+    {
+        assert(this != &that);
+        std::swap(handle_, that.handle_);
+        return *this;
+    }
+
+    ~dns() noexcept
+    {
+        if (handle_)
+            evdns_base_free(handle_, DNS_ERR_SHUTDOWN);
+    }
+
+    void assign(handle_type handle) noexcept
+    {
+        assert(handle);
+        handle_ = handle;
+    }
+
+    handle_type handle() const noexcept
+    {
+        return handle_;
+    }
+
+    operator handle_type() const noexcept
+    {
+        return handle();
+    }
+
+    bool empty() const noexcept
+    {
+        return nullptr == handle();
+    }
+
+    dns& set(const char *key, const char *val)
+    {
+        assert(key && val);
+        assert((key[0] != '\0') && (val[0] != '\0'));
+        detail::check_result("evdns_base_set_option",
+            evdns_base_set_option(assert_handle(), key, val));
+        return *this;
+    }
+
+    dns& randomize_case(const char *val)
+    {
+        return set("randomize-case", val);
+    }
+
+    dns& timeout(const char *val)
+    {
+        return set("timeout", val);
+    }
+
+    dns& max_timeouts(const char *val)
+    {
+        return set("max-timeouts", val);
+    }
+};
+
+} // namespace e4pp
