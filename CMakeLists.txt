@@ -5,7 +5,7 @@ project(e4pp VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(e4pp INTERFACE)
+add_library(e4pp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include) 
 
 target_include_directories(
     e4pp INTERFACE
@@ -13,7 +13,10 @@ target_include_directories(
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
+# i don't know for what
 add_library(e4pp::e4pp ALIAS e4pp)
+
+add_subdirectory(example)
 
 # Installation
 # ------------

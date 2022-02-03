@@ -12,20 +12,26 @@ namespace e4pp {
 
 using buffer_event_handle_type = bufferevent*;
 
-class buffer_event
+class buffer_event final
 {
 public:
     using handle_type = buffer_event_handle_type;
 
 private:
-
-    handle_type hbev_{ nullptr };
+    struct deallocate 
+    {
+        void operator()(handle_type ptr) noexcept 
+        { 
+            bufferevent_free(ptr); 
+        };
+    };
+    std::unique_ptr<bufferevent, deallocate> handle_{};
 
     handle_type assert_handle() const noexcept
     {
-        auto hbev = handle();
-        assert(hbev);
-        return hbev;
+        auto h = handle();
+        assert(h);
+        return h;
     }
 
     auto output_handle() const noexcept
@@ -38,7 +44,6 @@ private:
         return bufferevent_get_input(assert_handle());
     }
 
-    // хэндл очереди
     queue_handle_type queue_handle() const noexcept
     {
         return bufferevent_get_base(assert_handle());
@@ -46,60 +51,34 @@ private:
 
 public:
     buffer_event() = default;
+    buffer_event(buffer_event&&) = default;
+    buffer_event& operator=(buffer_event&&) = default;
 
-    buffer_event(const buffer_event&) = delete;
-    buffer_event& operator=(const buffer_event&) = delete;
-
-    buffer_event(buffer_event&& other) noexcept
+    explicit buffer_event(handle_type handle) noexcept
+        : handle_{handle}
     {
-        std::swap(hbev_, other.hbev_);
+        assert(handle);
     }
 
-    buffer_event& operator=(buffer_event&& other) noexcept
-    {
-        std::swap(hbev_, other.hbev_);
-        return *this;
-    }
+    // fd == -1 // create new socket
+    buffer_event(queue_handle_type queue,
+        evutil_socket_t fd, int opt = BEV_OPT_CLOSE_ON_FREE)
+        : buffer_event{detail::check_pointer("bufferevent_socket_new",
+            bufferevent_socket_new(queue, fd, opt))}
+    {   }
 
-    buffer_event(handle_type hbev) noexcept
-        : hbev_(hbev)
-    {
-        assert(hbev);
-    }
-
-    ~buffer_event() noexcept
-    {
-        auto hbev = handle();
-        if (nullptr != hbev)
-            bufferevent_free(hbev);
-    }
-
-    void attach(handle_type hbev) noexcept
-    {
-        hbev_ = hbev;
-    }
-
+    // fd == -1 // create new socket
     void create(queue_handle_type queue,
         evutil_socket_t fd, int opt = BEV_OPT_CLOSE_ON_FREE)
     {
         assert(queue);
-        hbev_ = detail::check_pointer("bufferevent_socket_new",
-            bufferevent_socket_new(queue, fd, opt));
-    }
-
-    void create(queue_handle_type queue, int opt = BEV_OPT_CLOSE_ON_FREE)
-    {
-        create(queue, -1, opt);
+        handle_.reset(detail::check_pointer("bufferevent_socket_new",
+            bufferevent_socket_new(queue, fd, opt)));
     }
 
     void destroy() noexcept
     {
-        auto hbev = handle();
-        if (nullptr != hbev)
-        {
-            bufferevent_free(hbev);
-            hbev_ = nullptr;
-        }
+        handle_.reset();
     }
 
     auto input() const noexcept
@@ -155,7 +134,7 @@ public:
 
     handle_type handle() const noexcept
     {
-        return hbev_;
+        return handle_.get();
     }
 
     operator handle_type() const noexcept

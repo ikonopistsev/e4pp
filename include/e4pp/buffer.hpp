@@ -55,19 +55,19 @@ class basic_buffer
     using this_type = basic_buffer<A>;
 
 private:
-    evbufer_ptr hbuf_{ A::allocate() };
+    evbufer_ptr handle_{A::allocate()};
 
     auto assert_handle() const noexcept
     {
-        auto hbuf = handle();
-        assert(hbuf);
-        return hbuf;
+        auto h = handle();
+        assert(h);
+        return h;
     }
 
 public:
     auto handle() const noexcept
     {
-        return hbuf_;
+        return handle_;
     }
 
     operator evbufer_ptr() const noexcept
@@ -95,7 +95,7 @@ public:
     // only for ref
     // this delete copy ctor for buffer&
     basic_buffer(const basic_buffer& other) noexcept
-        : hbuf_{ other.handle() }
+        : handle_{ other.handle() }
     {
         // copy only for refs
         static_assert(std::is_same<this_type, buffer_ref>::value);
@@ -107,23 +107,23 @@ public:
     {
         // copy only for refs
         static_assert(std::is_same<this_type, buffer_ref>::value);
-        hbuf_ = other.handle();
+        handle_ = other.handle();
         return *this;
     }
 
     basic_buffer(basic_buffer&& that) noexcept
     {
-        std::swap(hbuf_, that.hbuf_);
+        std::swap(handle_, that.handle_);
     }
 
     basic_buffer& operator=(basic_buffer&& that) noexcept
     {
-        std::swap(hbuf_, that.hbuf_);
+        std::swap(handle_, that.handle_);
         return *this;
     }
 
     explicit basic_buffer(evbufer_ptr ptr) noexcept
-        : hbuf_(ptr)
+        : handle_{ ptr }
     {
         static_assert(std::is_same<this_type, buffer_ref>::value);
         assert(ptr);

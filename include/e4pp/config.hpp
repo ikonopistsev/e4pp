@@ -9,21 +9,27 @@ namespace e4pp {
 
 using config_handle_type = event_config*;
 
-class config
+class config final
 {
 public:
     using handle_type = config_handle_type;
 
 private:
-    std::unique_ptr<event_config, decltype(&event_config_free)>
-        hconf_{ detail::check_pointer("event_config_new", 
-            event_config_new()), event_config_free };
+    struct deallocate 
+    {
+        void operator()(handle_type ptr) noexcept 
+        { 
+            event_config_free(ptr); 
+        };
+    };
+    using ptr_type = std::unique_ptr<event_config, deallocate>;
+    ptr_type handle_{detail::check_pointer("event_config_new", 
+            event_config_new())};
 
 public:
     config() = default;
-
-    config(config&) = delete;
-    config& operator=(config&) = delete;
+    config(config&&) = default;
+    config& operator=(config&&) = default;
 
     explicit config(int flag)
     {
@@ -60,7 +66,7 @@ public:
 
     handle_type handle() const noexcept
     {
-        return hconf_.get();
+        return handle_.get();
     }
 
     operator handle_type() const noexcept

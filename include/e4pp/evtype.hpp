@@ -5,46 +5,25 @@
 
 namespace e4pp {
 
-class heap_event
+class heap_event final
 {
 public:
     using handle_type = event_handle_type;
 
 private:
-    handle_type handle_{ nullptr };
+    struct deallocate 
+    {
+        void operator()(handle_type ptr) noexcept 
+        { 
+            event_free(ptr); 
+        };
+    };
+    std::unique_ptr<event, deallocate> handle_{};
 
 public:
     heap_event() = default;
-    heap_event(const heap_event&) = delete;
-    heap_event& operator=(const heap_event&) = delete;
-
-    heap_event(heap_event&& that) noexcept
-    {
-        assert(this != &that);
-        std::swap(handle_, that.handle_);
-    }
-
-    heap_event& operator=(heap_event&& that) noexcept
-    {
-        assert(this != &that);
-        std::swap(handle_, that.handle_);
-        return *this;
-    }
-
-    // generic
-    heap_event(queue_handle_type queue, evutil_socket_t fd, 
-        event_flag ef, event_callback_fn fn, void *arg)
-        : handle_{ detail::check_pointer("event_new", 
-            event_new(queue, fd, ef, fn, arg)) }
-    {
-        assert(queue && fn);
-    }
-
-    ~heap_event() noexcept
-    {
-        if (handle_)
-            event_free(handle_);
-    }
+    heap_event(heap_event&&) = default;
+    heap_event& operator=(heap_event&&) = default;
 
     // захват хэндла
     explicit heap_event(handle_type handle) noexcept
@@ -53,9 +32,13 @@ public:
         assert(handle);
     }
 
-    void attach(handle_type handle) noexcept
+    // generic
+    heap_event(queue_handle_type queue, evutil_socket_t fd, 
+        event_flag ef, event_callback_fn fn, void *arg)
+        : heap_event{detail::check_pointer("event_new", 
+            event_new(queue, fd, ef, fn, arg))}
     {
-        handle_ = handle;
+        assert(queue && fn);
     }
 
     // создание объекта
@@ -67,22 +50,18 @@ public:
         assert(queue && fn && !handle_);
 
         // создаем объект эвента
-        handle_ = detail::check_pointer("event_new",
-            event_new(queue, fd, ef, fn, arg));
+        handle_.reset(detail::check_pointer("event_new",
+            event_new(queue, fd, ef, fn, arg)));
     }
 
     void destroy() noexcept
     {
-        if (handle_)
-        {
-            event_free(handle_);
-            handle_ = nullptr;
-        }
+        handle_.reset();
     }
 
     handle_type handle() const noexcept
     {
-        return handle_;
+        return handle_.get();
     }
 
     operator handle_type() const noexcept
@@ -96,7 +75,7 @@ public:
     }
 };
 
-class stack_event
+class stack_event final
 {
 private:
     event handle_{};
@@ -137,7 +116,7 @@ public:
     void destroy() noexcept
     {
         event_del(handle());
-        handle_ = event{};
+        handle_ = {};
     }
 
     handle_type handle() const noexcept

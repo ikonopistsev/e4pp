@@ -1,52 +1,33 @@
 #pragma once
 
 #include "e4pp/config.hpp"
+#include "e4pp/functional.hpp"
 #include <type_traits>
 #include <string>
 
 namespace e4pp {
 
-class queue
+class queue final
 {
 public:
     using handle_type = queue_handle_type;
 
 private:
-    handle_type handle_{ 
-        detail::check_pointer("event_base_new", 
-        event_base_new()) };
-
-    static inline void destroy_handle(handle_type handle) noexcept
+    struct deallocate 
     {
-        if (nullptr != handle)
-            event_base_free(handle);
-    }
-
-    handle_type assert_handle() const noexcept
-    {
-        auto h = handle();
-        assert(h);
-        return h;
-    }
+        void operator()(handle_type ptr) noexcept 
+        { 
+            event_base_free(ptr); 
+        };
+    };
+    using ptr_type = std::unique_ptr<event_base, deallocate>;
+    ptr_type handle_{detail::check_pointer("event_base_new", 
+        event_base_new())};
 
 public:
     queue() = default;
-
-    queue(const queue& other) = delete;
-    queue& operator=(const queue& other) = delete;
-
-    queue(queue&& that) noexcept
-    {
-        assert(this != &that);
-        std::swap(handle_, that.handle_);
-    }
-
-    queue& operator=(queue&& that) noexcept
-    {
-        assert(this != &that);
-        std::swap(handle_, that.handle_);
-        return *this;
-    }
+    queue(queue&&) = default;
+    queue& operator=(queue&&) = default;
 
     explicit queue(handle_type handle) noexcept
         : handle_{handle}
@@ -55,24 +36,13 @@ public:
     }
 
     explicit queue(const config& conf) 
-        : queue{ detail::check_pointer("event_base_new_with_config",
-            event_base_new_with_config(conf)) }
+        : queue{detail::check_pointer("event_base_new_with_config",
+            event_base_new_with_config(conf))}
     {   }
-
-    ~queue() noexcept
-    {
-        destroy_handle(handle_);
-    }
-
-    void assign(handle_type handle) noexcept
-    {
-        assert(handle);
-        handle_ = handle;
-    }
 
     handle_type handle() const noexcept
     {
-        return handle_;
+        return handle_.get();
     }
 
     operator handle_type() const noexcept
@@ -87,13 +57,12 @@ public:
 
     void destroy() noexcept
     {
-        destroy_handle(handle_);
-        handle_ = nullptr;
+        handle_.reset();
     }
 
     std::string method() const noexcept
     {
-        auto res = event_base_get_method(assert_handle());
+        auto res = event_base_get_method(assert_handle(handle()));
         return res ? std::string(res) : std::string();
     }
 
@@ -105,7 +74,7 @@ public:
 
     int features() const noexcept
     {
-        return event_base_get_features(assert_handle());
+        return event_base_get_features(assert_handle(handle()));
     }
 
     /* true - has events */
@@ -113,7 +82,7 @@ public:
     bool dispatch()
     {
         return 0 == detail::check_result("event_base_dispatch",
-            event_base_dispatch(assert_handle()));
+            event_base_dispatch(assert_handle(handle())));
     }
 
     template<class Rep, class Period>
@@ -126,31 +95,37 @@ public:
     bool loop(int flags)
     {
         return 0 == detail::check_result("event_base_loop",
-            event_base_loop(assert_handle(), flags));
+            event_base_loop(assert_handle(handle()), flags));
     }
 
     void loopexit(timeval tv)
     {
         detail::check_result("event_base_loopexit",
-            event_base_loopexit(assert_handle(), &tv));
+            event_base_loopexit(assert_handle(handle()), &tv));
     }
+
+    template<class Rep, class Period>
+    void loopexit(std::chrono::duration<Rep, Period> timeout)
+    {
+        loopexit(make_timeval(timeout));
+    }    
 
     void loop_break()
     {
         detail::check_result("event_base_loopbreak",
-            event_base_loopbreak(assert_handle()));
+            event_base_loopbreak(assert_handle(handle())));
     }
 
     bool stopped() const noexcept
     {
-        return 0 != event_base_got_break(assert_handle());
+        return 0 != event_base_got_break(assert_handle(handle()));
     }
 
 #ifdef EVENT_MAX_PRIORITIES
     void priority_init(int level)
     {
         detail::check_result("event_base_priority_init",
-            event_base_priority_init(assert_handle(), level));
+            event_base_priority_init(assert_handle(handle()), level));
     }
 #endif // EVENT_MAX_PRIORITIES
 
@@ -158,14 +133,14 @@ public:
     {
         timeval tv;
         detail::check_result("event_base_gettimeofday_cached",
-            event_base_gettimeofday_cached(assert_handle(), &tv));
+            event_base_gettimeofday_cached(assert_handle(handle()), &tv));
         return tv;
     }
 
     void update_cache_time() const
     {
         detail::check_result("event_base_update_cache_time",
-            event_base_update_cache_time(assert_handle()));
+            event_base_update_cache_time(assert_handle(handle())));
     }
 
     operator timeval() const
@@ -177,7 +152,14 @@ public:
         event_callback_fn fn, void *arg)
     {
         detail::check_result("event_base_once",
-            event_base_once(assert_handle(), fd, ef, fn, arg, &tv));
+            event_base_once(assert_handle(handle()), fd, ef, fn, arg, &tv));
+    }
+
+    template<class T>
+    void once(evutil_socket_t fd, event_flag ef, timeval tv, T&& fn)
+    {
+        auto p = proxy_call(std::forward<T>(fn));
+        once(fd, ef, tv, p.second, p.first);
     }
 
     template<class T, class Rep, class Period>
@@ -196,13 +178,13 @@ public:
     template<class T, class Rep, class Period>
     void once(std::chrono::duration<Rep, Period> timeout, T&& fn)
     {
-        once(-1, EV_TIMEOUT, timeout, std::forward<T>(fn));
+        once(make_timeval(timeout), std::forward<T>(fn));
     }
 
     template<class T>
     void once(T&& fn)
     {
-        once(-1, EV_TIMEOUT, timeval{}, std::forward<T>(fn));
+        once(timeval{}, std::forward<T>(fn));
     }
 
     template<class T>

@@ -6,7 +6,7 @@
 namespace e4pp {
 
 template<class T>
-struct timer_fn
+struct timer_fn final
 {
     using fn_type = void (T::*)();
     using self_type = T;
@@ -26,7 +26,7 @@ struct timer_fn
 };
 
 template<class T>
-struct generic_fn
+struct generic_fn final
 {
     using fn_type = void (T::*)(evutil_socket_t fd, event_flag ef);
     using self_type = T;

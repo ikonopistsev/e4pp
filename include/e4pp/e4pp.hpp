@@ -32,6 +32,13 @@ timeval make_timeval(std::chrono::duration<Rep, Period> timeout) noexcept
     };
 }
 
+template<class T>
+T assert_handle(T handle) noexcept
+{
+    assert(handle);
+    return handle;
+}
+
 // static inline void startup(unsigned char h = 2, unsigned char l = 2)
 // {
 //     static const net::launch launch(h, l);

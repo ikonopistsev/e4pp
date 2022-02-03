@@ -29,12 +29,12 @@ public:
     evcore& operator=(const evcore&) = default;
 
 // generic
-    evcore(queue_pointer queue, evutil_socket_t fd, event_flag ef,
+    evcore(queue_handle_type queue, evutil_socket_t fd, event_flag ef,
         event_callback_fn fn, void *arg)
         : event_{ queue, fd, ef, fn, arg }
     {   }
 
-    evcore(queue_pointer queue, evutil_socket_t fd, event_flag ef,
+    evcore(queue_handle_type queue, evutil_socket_t fd, event_flag ef,
         timeval tv, event_callback_fn fn, void *arg)
         : evcore{ queue, fd, ef, fn, arg }
     {   
@@ -42,81 +42,95 @@ public:
     }
 
     template<class F, class P>
-    evcore(queue_pointer queue, evutil_socket_t fd, 
+    evcore(queue_handle_type queue, evutil_socket_t fd, 
         event_flag ef, std::pair<F, P> p)
         : evcore{ queue, fd, ef, p.second, p.first }
     {   }
 
     template<class F, class P>
-    evcore(queue_pointer queue, evutil_socket_t fd, 
+    evcore(queue_handle_type queue, evutil_socket_t fd, 
         event_flag ef, timeval tv, std::pair<F, P> p)
         : evcore{ queue, fd, ef, tv, p.second, p.first }
     {   }
 
     template<class F>
-    evcore(queue_pointer queue, evutil_socket_t fd, 
+    evcore(queue_handle_type queue, evutil_socket_t fd, 
         event_flag ef, F& fn)
         : evcore{ queue, fd, ef, proxy_call(fn) }
     {   }  
 
     template<class F>
-    evcore(queue_pointer queue, evutil_socket_t fd, 
+    evcore(queue_handle_type queue, evutil_socket_t fd, 
         event_flag ef, timeval tv, F& fn)
         : evcore{ queue, fd, ef, tv, proxy_call(fn) }
     {   }  
 
     template<class F, class Rep, class Period>
-    evcore(queue_pointer queue, evutil_socket_t fd, 
+    evcore(queue_handle_type queue, evutil_socket_t fd, 
         event_flag ef, std::chrono::duration<Rep, Period> timeout, F& fn)
-        : evcore{ queue, fd, ef, make_timeval(timeout), proxy_call(fn) }
+        : evcore{ queue, fd, ef, make_timeval(timeout), fn }
     {   } 
 
     template<class F>
-    evcore(queue_pointer queue, event_flag ef, F& fn)
+    evcore(queue_handle_type queue, event_flag ef, F& fn)
         : evcore{ queue, -1, ef, fn }
     {   }  
 
     template<class F>
-    evcore(queue_pointer queue, event_flag ef, timeval tv, F& fn)
+    evcore(queue_handle_type queue, event_flag ef, timeval tv, F& fn)
         : evcore{ queue, -1, ef, tv, fn }
     {   }
 
     template<class F, class Rep, class Period>
-    evcore(queue_pointer queue, event_flag ef, 
+    evcore(queue_handle_type queue, event_flag ef, 
         std::chrono::duration<Rep, Period> timeout, F& fn)
         : evcore{ queue, ef, make_timeval(timeout), fn }
     {   } 
 
     template<class F>
-    evcore(queue_pointer queue, F& fn)
+    evcore(queue_handle_type queue, F& fn)
         : evcore{ queue, -1, EV_TIMEOUT, fn }
     {   }  
 
     template<class F>
-    evcore(queue_pointer queue, timeval tv, F& fn)
+    evcore(queue_handle_type queue, timeval tv, F& fn)
         : evcore{ queue, -1, EV_TIMEOUT, tv, fn }
     {   }
 
     template<class F, class Rep, class Period>
-    evcore(queue_pointer queue,
+    evcore(queue_handle_type queue,
         std::chrono::duration<Rep, Period> timeout, F& fn)
         : evcore{ queue, -1, EV_TIMEOUT, timeout, fn }
     {   }
 
-    void create(queue_pointer queue, evutil_socket_t fd, event_flag ef,
+    void create(queue_handle_type queue, evutil_socket_t fd, event_flag ef,
         event_callback_fn fn, void *arg)
     {
         event_.create(queue, fd, ef, fn, arg);
     }
 
+    template<class F, class P>
+    void create(queue_handle_type queue, evutil_socket_t fd, 
+        event_flag ef, std::pair<F, P> p)
+    {   
+        create(queue, fd, ef, p.second, p.first);
+    }
+
     template<class F>
-    void create(queue_pointer queue, event_flag ef, F& fn)
+    void create(queue_handle_type queue, evutil_socket_t fd, 
+        event_flag ef, F& fn)
+    {
+        create(queue, fd, ef, proxy_call(fn));
+    }  
+
+    template<class F>
+    void create(queue_handle_type queue, event_flag ef, F& fn)
     {   
         create(queue, -1, ef|EV_TIMEOUT, fn);
     }  
 
     template<class F>
-    void create(queue_pointer queue, F& fn)
+    void create(queue_handle_type queue, F& fn)
     {   
         create(queue, -1, EV_TIMEOUT, fn);
     } 
@@ -132,7 +146,7 @@ public:
         return event_.handle();
     }
 
-    operator event_pointer() const noexcept
+    operator event_handle_type() const noexcept
     {
         return handle();
     }
@@ -154,6 +168,12 @@ public:
     void add(timeval tv)
     {
         add(&tv);
+    }
+
+    template<class Rep, class Period>
+    void add(std::chrono::duration<Rep, Period> timeout)
+    {
+        add(make_timeval(timeout));
     }
 
     void remove()
@@ -202,12 +222,12 @@ public:
     }
 
     // хэндл очереди
-    queue_pointer queue_handle() const noexcept
+    queue_handle_type queue_handle() const noexcept
     {
         return event_get_base(assert_handle());
     }
 
-    operator queue_pointer() const noexcept
+    operator queue_handle_type() const noexcept
     {
         return queue_handle();
     }

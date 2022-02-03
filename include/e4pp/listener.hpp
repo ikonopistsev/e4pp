@@ -8,50 +8,38 @@ namespace e4pp {
 
 using listener_handle_type = evconnlistener*;
 
-class listener
+class listener final
 {
 public:
     using handle_type = listener_handle_type;
 
 private:
-    std::unique_ptr<evconnlistener, decltype(&evconnlistener_free)>
-        handle_{ nullptr, evconnlistener_free };
-
-    handle_type assert_handle() const noexcept
+    struct deallocate 
     {
-        auto h = handle_.get();
-        assert(h);
-        return h;
-    }
+        void operator()(handle_type ptr) noexcept 
+        { 
+            evconnlistener_free(ptr); 
+        };
+    };
+    using ptr_type = std::unique_ptr<evconnlistener, deallocate>;
+    ptr_type handle_{};
 
+public:
     constexpr static auto lev_opt = unsigned{
         LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE
     };
 
-public:
     listener() = default;
+    listener(listener&&) = default;
+    listener& operator=(listener&&) = default;
 
     listener(int backlog, unsigned int flags,
         queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
         evconnlistener_cb cb, void *arg)
-        : handle_{ detail::check_pointer("evconnlistener_new_bind",
+        : handle_{detail::check_pointer("evconnlistener_new_bind",
             evconnlistener_new_bind(queue, cb, arg,
-                flags, backlog, sa, static_cast<int>(salen))), evconnlistener_free }
+                flags, backlog, sa, static_cast<int>(salen)))}
     {   }
-
-    listener(listener&) = delete;
-    listener& operator=(listener&) = delete;
-
-    listener(listener&& other)
-    {
-        swap(other);
-    }
-
-    listener& operator=(listener&& other)
-    {
-        swap(other);
-        return *this;
-    }
 
     void listen(queue_handle_type queue, unsigned int flags, int backlog,
         const sockaddr *sa, ev_socklen_t salen, evconnlistener_cb cb, void *arg)
@@ -69,7 +57,7 @@ public:
 
     bool empty() const noexcept
     {
-        return nullptr == handle_.get();
+        return nullptr == handle();
     }
 
     handle_type handle() const noexcept
@@ -85,23 +73,23 @@ public:
     void set(evconnlistener_cb cb, void *arg)
     {
         assert(cb);
-        evconnlistener_set_cb(assert_handle(), cb, arg);
+        evconnlistener_set_cb(assert_handle(handle()), cb, arg);
     }
 
     void clear()
     {
-        evconnlistener_set_cb(assert_handle(), nullptr, nullptr);
+        evconnlistener_set_cb(assert_handle(handle()), nullptr, nullptr);
     }
 
     evutil_socket_t fd() const noexcept
     {
-        return evconnlistener_get_fd(assert_handle());
+        return evconnlistener_get_fd(assert_handle(handle()));
     }
 
     // хэндл очереди
     queue_handle_type base() const noexcept
     {
-        return evconnlistener_get_base(assert_handle());
+        return evconnlistener_get_base(assert_handle(handle()));
     }
 
     void close()
@@ -111,14 +99,14 @@ public:
 
     void enable()
     {
-        auto rc = evconnlistener_enable(assert_handle());
+        auto rc = evconnlistener_enable(assert_handle(handle()));
         if (-1 == rc)
             throw std::runtime_error("evconnlistener_enable");
     }
 
     void disable()
     {
-        auto rc = evconnlistener_disable(assert_handle());
+        auto rc = evconnlistener_disable(assert_handle(handle()));
         if (-1 == rc)
             throw std::runtime_error("evconnlistener_disable");
     }

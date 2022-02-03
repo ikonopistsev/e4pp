@@ -13,31 +13,20 @@ class uri
 {
 public:
     using handle_type = uri_handle_type;
-    using ptr_type = std::unique_ptr<evhttp_uri, 
-         decltype(&evhttp_uri_free)>;
 
 private:
-    ptr_type handle_{ nullptr, evhttp_uri_free };
-    std::string_view user_{};
-    std::string_view passcode_{};
+    struct deallocate 
+    {
+        void operator()(handle_type ptr) noexcept 
+        { 
+            evhttp_uri_free(ptr); 
+        };
+    };
+    using ptr_type = std::unique_ptr<evhttp_uri, deallocate>;
+    ptr_type handle_{};
 
     using sv = std::string_view;
     constexpr static auto npos = sv::npos;
-
-    auto split_auth(std::string_view auth) noexcept
-    {
-        auto i = auth.find(':');
-        return (i == npos) ?
-            std::make_pair(auth, sv{}) :
-            std::make_pair(auth.substr(0, i), auth.substr(i + 1));
-    }
-
-    handle_type assert_handle() const noexcept
-    {
-        auto h = handle();
-        assert(h);
-        return h;
-    }
 
 public:
     uri() = default;
@@ -45,17 +34,10 @@ public:
     uri& operator=(uri&&) = default;
 
     explicit uri(const char *source_uri)
-        : handle_{ detail::check_pointer("evhttp_uri_parse",
-            evhttp_uri_parse(source_uri)), evhttp_uri_free }
+        : handle_{detail::check_pointer("evhttp_uri_parse",
+            evhttp_uri_parse(source_uri))}
     {
         assert(source_uri);
-        auto ui = userinfo();
-        if (!ui.empty())
-        {
-            auto p = split_auth(ui);
-            user_ = std::get<0>(p);
-            passcode_ = std::get<1>(p);
-        }
     }
 
     explicit uri(const std::string& source_uri)
@@ -69,35 +51,38 @@ public:
 
     std::string_view scheme() const noexcept
     {
-        auto rc = evhttp_uri_get_scheme(assert_handle());
+        auto rc = evhttp_uri_get_scheme(assert_handle(handle()));
         return (rc) ? sv{rc} : sv{};
     }
 
     std::string_view userinfo() const noexcept
     {
-        auto rc = evhttp_uri_get_userinfo(assert_handle());
+        auto rc = evhttp_uri_get_userinfo(assert_handle(handle()));
         return (rc) ? sv{rc} : sv{};
     }
 
-    std::string_view user() const noexcept
+    static inline auto split_auth(std::string_view auth) noexcept
     {
-        return user_;
+        auto i = auth.find(':');
+        return (i == npos) ?
+            std::make_pair(auth, sv{}) :
+            std::make_pair(auth.substr(0, i), auth.substr(i + 1));
     }
 
-    std::string_view passcode() const noexcept
+    auto auth() noexcept
     {
-        return passcode_;
+        return split_auth(userinfo());
     }
 
     std::string_view host() const noexcept
     {
-        auto rc = evhttp_uri_get_host(assert_handle());
+        auto rc = evhttp_uri_get_host(assert_handle(handle()));
         return (rc) ? sv{rc} : sv{};
     }
 
     int port() const noexcept
     {
-        return evhttp_uri_get_port(assert_handle());
+        return evhttp_uri_get_port(assert_handle(handle()));
     }
 
     int port(int def) const noexcept
@@ -108,7 +93,7 @@ public:
 
     std::string_view path() const noexcept
     {
-        auto rc = evhttp_uri_get_path(assert_handle());
+        auto rc = evhttp_uri_get_path(assert_handle(handle()));
         return (rc) ? sv{rc} : sv{};
     }
 
@@ -120,7 +105,7 @@ public:
 
     std::string_view query() const noexcept
     {
-        auto rc = evhttp_uri_get_query(assert_handle());
+        auto rc = evhttp_uri_get_query(assert_handle(handle()));
         return (rc) ? sv{rc} : sv{};
     }
 
