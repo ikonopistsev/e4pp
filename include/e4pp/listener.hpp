@@ -1,6 +1,7 @@
 #pragma once
 
 #include "e4pp/e4pp.hpp"
+#include "e4pp/functional.hpp"
 #include "event2/listener.h"
 #include <cassert>
 
@@ -25,7 +26,7 @@ private:
     ptr_type handle_{};
 
 public:
-    constexpr static auto lev_opt = unsigned{
+    constexpr static auto lev_opt = int{
         LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE
     };
 
@@ -33,21 +34,46 @@ public:
     listener(listener&&) = default;
     listener& operator=(listener&&) = default;
 
-    listener(int backlog, unsigned int flags,
-        queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
-        evconnlistener_cb cb, void *arg)
+    listener(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
+        evconnlistener_cb cb, void *arg, int backlog = 1024, flag fl = { lev_opt })
         : handle_{detail::check_pointer("evconnlistener_new_bind",
             evconnlistener_new_bind(queue, cb, arg,
-                flags, backlog, sa, static_cast<int>(salen)))}
+                fl, backlog, sa, static_cast<int>(salen)))}
     {   }
 
-    void listen(queue_handle_type queue, unsigned int flags, int backlog,
-        const sockaddr *sa, ev_socklen_t salen, evconnlistener_cb cb, void *arg)
+    template<class F, class P>
+    listener(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
+        std::pair<F, P> p, int backlog = 1024, flag fl = { lev_opt })
+        : listener{queue, sa, salen, p.second, p.first, backlog, fl}
+    {   }
+
+    template<class F>
+    listener(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
+        F& fn, int backlog = 1024, flag fl = { lev_opt })
+        : listener{queue, sa, salen, proxy_call(fn), backlog, fl}
+    {   }  
+
+    void listen(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
+        evconnlistener_cb cb, void *arg, int backlog = 1024, flag fl = { lev_opt })
     {
         handle_.reset(detail::check_pointer("evconnlistener_new_bind",
             evconnlistener_new_bind(queue, cb, arg,
-                flags, backlog, sa, static_cast<int>(salen))));
+                fl, backlog, sa, static_cast<int>(salen))));
     }
+
+    template<class F, class P>
+    void listen(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
+        std::pair<F, P> p, int backlog = 1024, flag fl = { lev_opt })
+    {   
+        listen(queue, sa, salen, p.second, p.first, backlog, fl);
+    }
+
+    template<class F>
+    void listen(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
+        F& fn, int backlog = 1024, flag fl = { lev_opt })
+    {   
+        listen(queue, sa, salen, proxy_call(fn), backlog, fl);
+    }  
 
     void swap(listener& other) noexcept
     {

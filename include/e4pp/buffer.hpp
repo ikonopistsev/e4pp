@@ -95,7 +95,7 @@ public:
     // only for ref
     // this delete copy ctor for buffer&
     basic_buffer(const basic_buffer& other) noexcept
-        : handle_{ other.handle() }
+        : handle_{other.handle()}
     {
         // copy only for refs
         static_assert(std::is_same<this_type, buffer_ref>::value);
@@ -123,7 +123,7 @@ public:
     }
 
     explicit basic_buffer(evbufer_ptr ptr) noexcept
-        : handle_{ ptr }
+        : handle_{ptr}
     {
         static_assert(std::is_same<this_type, buffer_ref>::value);
         assert(ptr);

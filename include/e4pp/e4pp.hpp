@@ -13,13 +13,6 @@
 
 namespace e4pp {
 
-struct flag {   
-    short value; 
-    operator short() const noexcept {
-        return value;
-    }
-};
-
 using event_flag = short;
 using event_handle_type = event*;
 using queue_handle_type = event_base*;
@@ -45,6 +38,26 @@ T assert_handle(T handle) noexcept
     assert(handle);
     return handle;
 }
+
+struct flag 
+{   
+    int value_{};
+    
+    operator int() const noexcept 
+    {
+        return value_;
+    }
+
+    constexpr static inline flag timeout(int ef = 0) 
+    {
+        return { EV_TIMEOUT|ef };
+    }
+
+    constexpr static inline flag interval(int ef = 0) 
+    {
+        return { EV_TIMEOUT|EV_PERSIST|ef };
+    }
+};
 
 // static inline void startup(unsigned char h = 2, unsigned char l = 2)
 // {

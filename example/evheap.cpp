@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <cassert>
 #include <chrono>
+#include <arpa/inet.h>
 
 std::ostream& output(std::ostream& os)
 {
@@ -49,7 +50,7 @@ class proxy_test
         &proxy_test::do_fn, *this };
     e4pp::ev_stack evs_{};
 
-    e4pp::evh::timer just_timer_{queue_, e4pp::flag{EV_TIMEOUT}, []{
+    e4pp::evh::timer just_timer_{queue_, e4pp::flag::timeout(), []{
             cout() << "just timer!" << std::endl;
         }};
 
@@ -151,18 +152,45 @@ int run()
     e4pp::queue queue{};
     cout() << "queue: " << sizeof(queue) << std::endl;
 
+    e4pp::acceptor_fun on_connect = [](auto fd, auto sa, auto salen){
+        const char* rc = nullptr;
+        std::string text(32, '\0');
+        auto family = sa->sa_family;
+        auto& sin_addr = reinterpret_cast<sockaddr_in*>(sa)->sin_addr;
+        auto& sin6_addr = reinterpret_cast<sockaddr_in6*>(sa)->sin6_addr;
+        if (family == AF_INET)
+        {
+            rc = inet_ntop(sa->sa_family, &sin_addr,
+                text.data(), static_cast<ev_socklen_t>(text.capacity()));
+        }
+        else
+        {
+         rc = inet_ntop(sa->sa_family, &sin_addr,
+                text.data(), static_cast<ev_socklen_t>(text.capacity()));
+        }
+        if (rc)
+            text.resize(std::strlen(rc));
+        else
+            text.clear();  
+
+        cout() << "accept from " << text << std::endl;
+
+        evutil_closesocket(fd); 
+    };
+
     sockaddr_in sin{};
     sin.sin_family = AF_INET;
     sin.sin_addr = { INADDR_ANY };
     sin.sin_port = htonl(32987);
-    e4pp::listener listener{256, e4pp::listener::lev_opt,
-        queue, reinterpret_cast<sockaddr*>(&sin), 
-        sizeof(sin), [](auto...){ }, nullptr};
+
+    e4pp::listener listener{queue, 
+        reinterpret_cast<sockaddr*>(&sin), sizeof(sin), on_connect};
+
     cout() << "listener: " << sizeof(listener) << std::endl;
 
     e4pp::queue thr_queue{};
     std::thread thr([&]{
-        thr_queue.loopexit(std::chrono::seconds{2});
+        thr_queue.loopexit(std::chrono::seconds{20});
         thr_queue.loop(EVLOOP_NO_EXIT_ON_EMPTY);
         queue.once([&]{
             queue.loop_break();

@@ -126,7 +126,8 @@ public:
     template<class F>
     void create(queue_handle_type queue, flag ef, F& fn)
     {   
-        create(queue, -1, flag{static_cast<short>(ef.value|EV_TIMEOUT)}, fn);
+        flag f{static_cast<short>(ef|EV_TIMEOUT)};
+        create(queue, -1, f, fn);
     }  
 
     template<class F>

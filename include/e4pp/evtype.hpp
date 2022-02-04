@@ -79,7 +79,7 @@ class stack_event final
 {
 private:
     event handle_{};
-
+    
 public:
     using handle_type = event_handle_type;
 
@@ -115,8 +115,11 @@ public:
 
     void destroy() noexcept
     {
-        event_del(handle());
-        handle_ = {};
+        if (!empty())
+        {
+            event_del(handle());
+            handle_ = {};
+        }
     }
 
     handle_type handle() const noexcept
