@@ -49,8 +49,7 @@ class proxy_test
         &proxy_test::do_fn, *this };
     e4pp::ev_stack evs_{};
 
-    e4pp::evh::timer just_timer_{ queue_, EV_TIMEOUT,
-        std::chrono::milliseconds(650), []{
+    e4pp::evh::timer just_timer_{ queue_, EV_TIMEOUT, []{
             cout() << "just timer!" << std::endl;
         } };
 
@@ -63,6 +62,8 @@ public:
 
         queue.once(std::chrono::milliseconds(400), timer_);
         queue.once(std::chrono::milliseconds(500), generic_);
+
+        just_timer_.add(std::chrono::milliseconds(650));
 
     }
 
