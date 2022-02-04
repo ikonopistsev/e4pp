@@ -13,6 +13,13 @@
 
 namespace e4pp {
 
+struct flag {   
+    short value; 
+    operator short() const noexcept {
+        return value;
+    }
+};
+
 using event_flag = short;
 using event_handle_type = event*;
 using queue_handle_type = event_base*;

@@ -34,7 +34,7 @@ public:
 
     // generic
     heap_event(queue_handle_type queue, evutil_socket_t fd, 
-        event_flag ef, event_callback_fn fn, void *arg)
+        flag ef, event_callback_fn fn, void *arg)
         : heap_event{detail::check_pointer("event_new", 
             event_new(queue, fd, ef, fn, arg))}
     {
@@ -43,7 +43,7 @@ public:
 
     // создание объекта
     void create(queue_handle_type queue, evutil_socket_t fd, 
-        event_flag ef, event_callback_fn fn, void *arg)
+        flag ef, event_callback_fn fn, void *arg)
     {
         // если создаем повторно поверх
         // значит что-то пошло не так
@@ -90,7 +90,7 @@ public:
     stack_event& operator=(const stack_event&) = delete;
 
     stack_event(queue_handle_type queue, evutil_socket_t fd,
-        event_flag ef, event_callback_fn fn, void *arg)
+        flag ef, event_callback_fn fn, void *arg)
     {
         create(queue, fd, ef, fn, arg);
     }
@@ -104,7 +104,7 @@ public:
 
     // создание объекта
     void create(queue_handle_type queue, evutil_socket_t fd,
-        event_flag ef, event_callback_fn fn, void *arg)
+        flag ef, event_callback_fn fn, void *arg)
     {
         // без метода не получится
         assert(queue && fn && empty());
