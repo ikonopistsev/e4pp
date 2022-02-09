@@ -50,7 +50,7 @@ struct generic_fn final
 template<class T>
 struct acceptor_fn final
 {
-    using fn_type = void (T::*)(evutil_socket_t, struct sockaddr *, int socklen);
+    using fn_type = void (T::*)(evutil_socket_t, sockaddr*, int socklen);
     using self_type = T;
 
     fn_type fn_{};

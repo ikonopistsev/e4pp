@@ -5,11 +5,11 @@
 
 namespace e4pp {
 
-template<class H, class E>
-class ev;
-
 using ev_heap = evcore<heap_event>;
 using ev_stack = evcore<stack_event>;
+
+template<class H, class E>
+class ev;
 
 namespace evs {
 
@@ -30,7 +30,7 @@ using type = ev_heap;
 } // namespace evh
 
 template<class H, class E>
-class ev 
+class ev final
     : evcore<E>
 {
     H handler_{};
