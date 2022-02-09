@@ -164,13 +164,13 @@ int run()
             cout() << "accept connection from " << rc << std::endl;
         else
             cout() << "accept connection" << std::endl;
-            
+
         evutil_closesocket(fd); 
     };
 
     sockaddr_storage sa{};
 	int slen = sizeof(sa);
-    evutil_parse_sockaddr_port("127.0.0.1:32987", 
+    evutil_parse_sockaddr_port("[::]:32987", 
         reinterpret_cast<sockaddr*>(&sa), &slen);
 
     e4pp::listener listener{queue, 
