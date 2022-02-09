@@ -160,7 +160,7 @@ public:
     // !!! это не выполнить на следующем цикле очереди
     // это добавить без таймаута
     // допустим вечное ожидание EV_READ или сигнала
-    void add(timeval* tv = nullptr)
+    void add(const timeval* tv = nullptr)
     {
         detail::check_result("event_add",
             event_add(assert_handle(), tv));

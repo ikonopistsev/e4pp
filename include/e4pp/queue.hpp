@@ -98,7 +98,7 @@ public:
             event_base_loop(assert_handle(handle()), flags));
     }
 
-    void loopexit(timeval tv)
+    void loopexit(const timeval& tv)
     {
         detail::check_result("event_base_loopexit",
             event_base_loopexit(assert_handle(handle()), &tv));
@@ -148,7 +148,7 @@ public:
         return gettimeofday_cached();
     }
 
-    void once(evutil_socket_t fd, event_flag ef, timeval tv,
+    void once(evutil_socket_t fd, event_flag ef, const timeval& tv,
         event_callback_fn fn, void *arg)
     {
         detail::check_result("event_base_once",
@@ -156,7 +156,7 @@ public:
     }
 
     template<class T>
-    void once(evutil_socket_t fd, event_flag ef, timeval tv, T&& fn)
+    void once(evutil_socket_t fd, event_flag ef, const timeval& tv, T&& fn)
     {
         auto p = proxy_call(std::forward<T>(fn));
         once(fd, ef, tv, p.second, p.first);
@@ -170,7 +170,7 @@ public:
     }
 
     template<class T>
-    void once(timeval tv, T&& fn)
+    void once(const timeval& tv, T&& fn)
     {
         once(-1, EV_TIMEOUT, tv, std::forward<T>(fn));
     }
@@ -188,7 +188,7 @@ public:
     }
 
     template<class T>
-    void once(queue& other, timeval tv, T&& fn)
+    void once(queue& other, const timeval& tv, T&& fn)
     {
         once(tv, timer_requeue(other, std::forward<T>(fn)));
 
@@ -209,7 +209,7 @@ public:
 
     template<class T>
     void once(queue& other, evutil_socket_t fd, 
-        event_flag ef, timeval tv, T&& fn)
+        event_flag ef, const timeval& tv, T&& fn)
     {
         once(fd, ef, tv, 
             generic_requeue(other, std::forward<T>(fn)));
