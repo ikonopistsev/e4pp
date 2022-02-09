@@ -178,13 +178,13 @@ int run()
         evutil_closesocket(fd); 
     };
 
-    sockaddr_in sin{};
-    sin.sin_family = AF_INET;
-    sin.sin_addr = { INADDR_ANY };
-    sin.sin_port = htonl(32987);
+    sockaddr sa{};
+	int slen = sizeof(sa);
+    evutil_parse_sockaddr_port("127.0.0.1:32987", &sa, &slen);
 
     e4pp::listener listener{queue, 
-        reinterpret_cast<sockaddr*>(&sin), sizeof(sin), on_connect};
+        reinterpret_cast<sockaddr*>(&sa), 
+        static_cast<socklen_t>(slen), on_connect};
 
     cout() << "listener: " << sizeof(listener) << std::endl;
 
@@ -225,7 +225,7 @@ int run()
 
 int main()
 {
-    //e4pp::startup();
+        //e4pp::startup();
     e4pp::use_threads();
 
     run();
