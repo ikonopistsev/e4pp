@@ -35,7 +35,7 @@ public:
     {   }
 
     evcore(queue_handle_type queue, evutil_socket_t fd, flag ef,
-        timeval tv, event_callback_fn fn, void *arg)
+        const timeval& tv, event_callback_fn fn, void *arg)
         : evcore{queue, fd, ef, fn, arg}
     {   
         add(tv);
@@ -49,7 +49,7 @@ public:
 
     template<class F, class P>
     evcore(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, timeval tv, std::pair<F, P> p)
+        flag ef, const timeval& tv, std::pair<F, P> p)
         : evcore{queue, fd, ef, tv, p.second, p.first}
     {   }
 
@@ -61,7 +61,7 @@ public:
 
     template<class F>
     evcore(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, timeval tv, F& fn)
+        flag ef, const timeval& tv, F& fn)
         : evcore{queue, fd, ef, tv, proxy_call(fn)}
     {   }  
 
@@ -77,7 +77,7 @@ public:
     {   }  
 
     template<class F>
-    evcore(queue_handle_type queue, flag ef, timeval tv, F& fn)
+    evcore(queue_handle_type queue, flag ef, const timeval& tv, F& fn)
         : evcore{queue, -1, ef, tv, fn}
     {   }
 
@@ -93,7 +93,7 @@ public:
     {   }  
 
     template<class F>
-    evcore(queue_handle_type queue, timeval tv, F& fn)
+    evcore(queue_handle_type queue, const timeval& tv, F& fn)
         : evcore{queue, -1, flag{EV_TIMEOUT}, tv, fn}
     {   }
 
@@ -166,7 +166,7 @@ public:
             event_add(assert_handle(), tv));
     }
 
-    void add(timeval tv)
+    void add(const timeval& tv)
     {
         add(&tv);
     }
