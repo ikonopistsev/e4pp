@@ -152,35 +152,26 @@ int run()
     e4pp::queue queue{};
     cout() << "queue: " << sizeof(queue) << std::endl;
 
-    e4pp::acceptor_fun on_connect = [](auto fd, auto sa, auto salen){
-        const char* rc = nullptr;
-        std::string text(32, '\0');
+    e4pp::acceptor_fun on_connect = [](auto fd, auto sa, auto salen) {
+        char text[INET6_ADDRSTRLEN];
+        const char* rc = text;
         auto family = sa->sa_family;
-        auto& sin_addr = reinterpret_cast<sockaddr_in*>(sa)->sin_addr;
-        auto& sin6_addr = reinterpret_cast<sockaddr_in6*>(sa)->sin6_addr;
-        if (family == AF_INET)
-        {
-            rc = inet_ntop(sa->sa_family, &sin_addr,
-                text.data(), static_cast<ev_socklen_t>(text.capacity()));
-        }
-        else
-        {
-         rc = inet_ntop(sa->sa_family, &sin_addr,
-                text.data(), static_cast<ev_socklen_t>(text.capacity()));
-        }
+        const void* addr = (family == AF_INET) ? 
+            static_cast<void*>(&reinterpret_cast<sockaddr_in*>(sa)->sin_addr) :
+            static_cast<void*>(&reinterpret_cast<sockaddr_in6*>(sa)->sin6_addr);
+        rc = evutil_inet_ntop(family, addr, text, sizeof(text));
         if (rc)
-            text.resize(std::strlen(rc));
+            cout() << "accept connection from " << rc << std::endl;
         else
-            text.clear();  
-
-        cout() << "accept from " << text << std::endl;
-
+            cout() << "accept connection" << std::endl;
+            
         evutil_closesocket(fd); 
     };
 
-    sockaddr sa{};
+    sockaddr_storage sa{};
 	int slen = sizeof(sa);
-    evutil_parse_sockaddr_port("127.0.0.1:32987", &sa, &slen);
+    evutil_parse_sockaddr_port("127.0.0.1:32987", 
+        reinterpret_cast<sockaddr*>(&sa), &slen);
 
     e4pp::listener listener{queue, 
         reinterpret_cast<sockaddr*>(&sa), 
