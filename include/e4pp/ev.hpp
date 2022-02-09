@@ -51,7 +51,7 @@ public:
     {   }
 
     ev(queue_handle_type queue, evutil_socket_t fd,
-        flag ef, timeval tv, H handler)
+        flag ef, const timeval& tv, H handler)
         : parent_type{queue, fd, ef, handler_}
         , handler_{std::move(handler)}
     {   }
@@ -69,7 +69,7 @@ public:
         , handler_{std::move(handler)}
     {   }
 
-    ev(queue_handle_type queue, flag ef, timeval tv, H handler)
+    ev(queue_handle_type queue, flag ef, const timeval& tv, H handler)
         : parent_type{queue, ef, tv, handler_}
         , handler_{std::move(handler)}
     {   }
