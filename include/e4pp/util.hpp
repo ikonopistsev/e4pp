@@ -1,11 +1,11 @@
 #pragma once
 
-#include <iostream>
-#include <iomanip>
 #include <chrono>
+#include <iomanip>
+#include <iostream>
 
 namespace e4pp {
-inline namespace util {
+namespace util {
 
 static bool verbose = false;
 static auto& stdcerr = std::cerr;

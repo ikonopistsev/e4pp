@@ -21,8 +21,12 @@ int main()
 
         srv.bind_socket(bind_addr, bind_port);
         evhttp_set_cb(localhost, "/123", [] (evhttp_request *req, void *) {
-            evhttp_send_reply(req, 200, "fuckoff!", nullptr);
+            e4pp::buffer b;
+            b.append("ok!"sv);
+            evhttp_send_reply(req, 200, "ok", b);
         }, nullptr);
+
+        // test: curl -v http://localhost:27321/123
 
         queue.dispatch(std::chrono::seconds(10));
 
