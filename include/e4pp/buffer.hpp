@@ -16,7 +16,7 @@ using evbufer_ptr = evbuffer*;
 
 namespace detail {
 
-struct ref_allocator
+struct buf_ref_allocator
 {
     constexpr static inline evbufer_ptr allocate() noexcept
     {
@@ -46,7 +46,7 @@ struct buf_allocator
 template<class A>
 class basic_buffer;
 
-using buffer_ref = basic_buffer<detail::ref_allocator>;
+using buffer_ref = basic_buffer<detail::buf_ref_allocator>;
 using buffer = basic_buffer<detail::buf_allocator>;
 
 template<class A>
@@ -154,27 +154,17 @@ public:
         append_ref(data, len, nullptr, nullptr);
     }
 
-    template<std::size_t N>
-    void append_ref(std::reference_wrapper<const char[N]> data_ref)
-    {
-        append_ref(data_ref, N - 1);
-    }
-
-    template<template<class, class...>
-        class Str, class Ch, class ... R>
-    void append_ref(const Str<Ch, R...>& text)
+    void append_ref(std::string_view text)
     {
         append_ref(text.data(), text.size());
     }
 
-    template<template<class, std::size_t>
-        class Str, class Ch, std::size_t Sz>
-    void append_ref(const Str<Ch, Sz>& text)
+    void append(const buffer_ref& buf)
     {
-        append_ref(text.data(), text.size());
+        detail::check_result("evbuffer_add_buffer",
+            evbuffer_add_buffer(assert_handle(), buf));        
     }
 
-    void append(buffer_ref) = delete;
     void append(buffer buf)
     {
         detail::check_result("evbuffer_add_buffer",
@@ -188,45 +178,9 @@ public:
             evbuffer_add(assert_handle(), data, len));
     }
 
-    void append(const void *data, std::size_t len, bool ref)
-    {
-        (ref) ?
-            append_ref(data, len) : append(data, len);
-    }
-
-    template<std::size_t N>
-    void append(std::reference_wrapper<const char[N]> data_ref)
-    {
-        append_ref(data_ref.get(), N - 1);
-    }
-
-    template<template<class, class...>
-        class Str, class Ch, class ... R>
-    void append(const Str<Ch, R...>& text)
+    void append(std::string_view text)
     {
         append(text.data(), text.size());
-    }
-
-    template<template<class, std::size_t>
-        class Str, class Ch, std::size_t Sz>
-    void append(const Str<Ch, Sz>& text)
-    {
-        append(text.data(), text.size());
-    }
-
-    template<class T>
-    void append(std::reference_wrapper<const T> data_ref)
-    {
-        const auto& str_buf = data_ref.get();
-        append_ref(str_buf.data(), str_buf.size());
-    }
-
-    // Prepends data to the beginning of the evbuffer
-    void prepend(buffer_ref) = delete;
-    void prepend(buffer buf)
-    {
-        detail::check_result("evbuffer_prepend_buffer",
-            evbuffer_prepend_buffer(assert_handle(), buf));
     }
 
     // Prepends data to the beginning of the evbuffer
@@ -237,25 +191,21 @@ public:
             evbuffer_prepend(assert_handle(), data, len));
     }
 
-    // Prepends data to the beginning of the evbuffer
-    template<std::size_t N>
-    void prepend(std::reference_wrapper<const char[N]> data_ref)
-    {
-        prepend(data_ref.get(), N - 1);
-    }
-
-    template<template<class, class...>
-        class Str, class Ch, class ... R>
-    void prepend(const Str<Ch, R...>& text)
+    void prepend(std::string_view text)
     {
         prepend(text.data(), text.size());
     }
 
-    template<template<class, std::size_t>
-        class Str, class Ch, std::size_t Sz>
-    void prepend(const Str<Ch, Sz>& text)
+    void prepend(const buffer_ref& buf)
     {
-        prepend(text.data(), text.size());
+        detail::check_result("evbuffer_prepend_buffer",
+            evbuffer_prepend_buffer(assert_handle(), buf));
+    }
+
+    void prepend(buffer buf)
+    {
+        detail::check_result("evbuffer_prepend_buffer",
+            evbuffer_prepend_buffer(assert_handle(), buf));
     }
 
     // Remove a specified number of bytes data from the beginning of an evbuffer.
@@ -351,10 +301,10 @@ public:
     }
 
     template<typename T>
-    void sync(T&& func)
+    void sync(T fn)
     {
         std::lock_guard<basic_buffer> l(*this);
-        func(*this);
+        fn(*this);
     }
 
     std::vector<char> vector() const

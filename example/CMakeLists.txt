@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.18)
 
 project(e4ppexample VERSION 1.0.0 LANGUAGES CXX)
 
@@ -11,4 +11,12 @@ if (WIN32)
   target_link_libraries(evheap event e4pp)
 else()
   target_link_libraries(evheap event event_pthreads pthread e4pp)
+endif()
+
+add_executable(evhttpsrv evhttpsrv.cpp)
+
+if (WIN32)
+  target_link_libraries(evhttpsrv event e4pp)
+else()
+  target_link_libraries(evhttpsrv event event_pthreads pthread e4pp)
 endif()

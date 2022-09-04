@@ -20,7 +20,7 @@ private:
         void operator()(handle_type ptr) noexcept 
         { 
             evhttp_uri_free(ptr); 
-        };
+        }
     };
     using ptr_type = std::unique_ptr<evhttp_uri, deallocate>;
     ptr_type handle_{};
@@ -144,28 +144,6 @@ public:
             rc += std::to_string(p);
         }
         return rc;
-    }
-};
-
-class query final
-{
-    evkeyvalq hdr_{};
-
-public:
-    query() = default;
-    query(const uri&) = delete;
-    query& operator=(const uri&) = delete;
-
-    explicit query(const char *query_str)
-    {
-        assert(query_str);
-        detail::check_result("evhttp_parse_query_str", 
-            evhttp_parse_query_str(query_str, &hdr_));
-    }
-
-    ~query() noexcept
-    {
-        evhttp_clear_headers(&hdr_);
     }
 };
 

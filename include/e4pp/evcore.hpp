@@ -29,12 +29,12 @@ public:
     evcore& operator=(const evcore&) = default;
 
 // generic
-    evcore(queue_handle_type queue, evutil_socket_t fd, flag ef,
+    evcore(queue_handle_type queue, evutil_socket_t fd, ev_flag ef,
         event_callback_fn fn, void *arg)
         : event_{queue, fd, ef, fn, arg}
     {   }
 
-    evcore(queue_handle_type queue, evutil_socket_t fd, flag ef,
+    evcore(queue_handle_type queue, evutil_socket_t fd, ev_flag ef,
         const timeval& tv, event_callback_fn fn, void *arg)
         : evcore{queue, fd, ef, fn, arg}
     {   
@@ -43,67 +43,67 @@ public:
 
     template<class F, class P>
     evcore(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, std::pair<F, P> p)
+        ev_flag ef, std::pair<F, P> p)
         : evcore{queue, fd, ef, p.second, p.first}
     {   }
 
     template<class F, class P>
     evcore(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, const timeval& tv, std::pair<F, P> p)
+        ev_flag ef, const timeval& tv, std::pair<F, P> p)
         : evcore{queue, fd, ef, tv, p.second, p.first}
     {   }
 
     template<class F>
     evcore(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, F& fn)
+        ev_flag ef, F& fn)
         : evcore{queue, fd, ef, proxy_call(fn)}
     {   }  
 
     template<class F>
     evcore(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, const timeval& tv, F& fn)
+        ev_flag ef, const timeval& tv, F& fn)
         : evcore{queue, fd, ef, tv, proxy_call(fn)}
     {   }  
 
     template<class F, class Rep, class Period>
     evcore(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, std::chrono::duration<Rep, Period> timeout, F& fn)
+        ev_flag ef, std::chrono::duration<Rep, Period> timeout, F& fn)
         : evcore{queue, fd, ef, make_timeval(timeout), fn}
     {   } 
 
     template<class F>
-    evcore(queue_handle_type queue, flag ef, F& fn)
+    evcore(queue_handle_type queue, ev_flag ef, F& fn)
         : evcore{queue, -1, ef, fn}
     {   }  
 
     template<class F>
-    evcore(queue_handle_type queue, flag ef, const timeval& tv, F& fn)
+    evcore(queue_handle_type queue, ev_flag ef, const timeval& tv, F& fn)
         : evcore{queue, -1, ef, tv, fn}
     {   }
 
     template<class F, class Rep, class Period>
-    evcore(queue_handle_type queue, flag ef, 
+    evcore(queue_handle_type queue, ev_flag ef, 
         std::chrono::duration<Rep, Period> timeout, F& fn)
         : evcore{queue, ef, make_timeval(timeout), fn}
     {   } 
 
     template<class F>
     evcore(queue_handle_type queue, F& fn)
-        : evcore{queue, -1, flag{EV_TIMEOUT}, fn}
+        : evcore{queue, -1, ev_flag{EV_TIMEOUT}, fn}
     {   }  
 
     template<class F>
     evcore(queue_handle_type queue, const timeval& tv, F& fn)
-        : evcore{queue, -1, flag{EV_TIMEOUT}, tv, fn}
+        : evcore{queue, -1, ev_flag{EV_TIMEOUT}, tv, fn}
     {   }
 
     template<class F, class Rep, class Period>
     evcore(queue_handle_type queue,
         std::chrono::duration<Rep, Period> timeout, F& fn)
-        : evcore{queue, -1, flag{EV_TIMEOUT}, timeout, fn}
+        : evcore{queue, -1, ev_flag{EV_TIMEOUT}, timeout, fn}
     {   }
 
-    void create(queue_handle_type queue, evutil_socket_t fd, flag ef,
+    void create(queue_handle_type queue, evutil_socket_t fd, ev_flag ef,
         event_callback_fn fn, void *arg)
     {
         event_.create(queue, fd, ef, fn, arg);
@@ -111,29 +111,29 @@ public:
 
     template<class F, class P>
     void create(queue_handle_type queue, 
-        evutil_socket_t fd, flag ef, std::pair<F, P> p)
+        evutil_socket_t fd, ev_flag ef, std::pair<F, P> p)
     {   
         create(queue, fd, ef, p.second, p.first);
     }
 
     template<class F>
     void create(queue_handle_type queue, 
-        evutil_socket_t fd, flag ef, F& fn)
+        evutil_socket_t fd, ev_flag ef, F& fn)
     {
         create(queue, fd, ef, proxy_call(fn));
     }  
 
     template<class F>
-    void create(queue_handle_type queue, flag ef, F& fn)
+    void create(queue_handle_type queue, ev_flag ef, F& fn)
     {   
-        flag f{static_cast<short>(ef|EV_TIMEOUT)};
+        ev_flag f{static_cast<short>(ef|EV_TIMEOUT)};
         create(queue, -1, f, fn);
     }  
 
     template<class F>
     void create(queue_handle_type queue, F& fn)
     {   
-        create(queue, -1, flag{EV_TIMEOUT}, fn);
+        create(queue, -1, ev_flag{EV_TIMEOUT}, fn);
     } 
 
 // api

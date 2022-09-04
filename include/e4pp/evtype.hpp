@@ -5,6 +5,26 @@
 
 namespace e4pp {
 
+struct ev_flag 
+{   
+    int value_{};
+    
+    operator int() const noexcept 
+    {
+        return value_;
+    }
+
+    constexpr static inline ev_flag timeout(int ef = 0) 
+    {
+        return { EV_TIMEOUT|ef };
+    }
+
+    constexpr static inline ev_flag interval(int ef = 0) 
+    {
+        return { EV_TIMEOUT|EV_PERSIST|ef };
+    }
+};
+
 class heap_event final
 {
 public:
@@ -34,7 +54,7 @@ public:
 
     // generic
     heap_event(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, event_callback_fn fn, void *arg)
+        ev_flag ef, event_callback_fn fn, void *arg)
         : heap_event{detail::check_pointer("event_new", 
             event_new(queue, fd, ef, fn, arg))}
     {
@@ -43,7 +63,7 @@ public:
 
     // создание объекта
     void create(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, event_callback_fn fn, void *arg)
+        ev_flag ef, event_callback_fn fn, void *arg)
     {
         // если создаем повторно поверх
         // значит что-то пошло не так
@@ -90,7 +110,7 @@ public:
     stack_event& operator=(const stack_event&) = delete;
 
     stack_event(queue_handle_type queue, evutil_socket_t fd,
-        flag ef, event_callback_fn fn, void *arg)
+        ev_flag ef, event_callback_fn fn, void *arg)
     {
         create(queue, fd, ef, fn, arg);
     }
@@ -104,7 +124,7 @@ public:
 
     // создание объекта
     void create(queue_handle_type queue, evutil_socket_t fd,
-        flag ef, event_callback_fn fn, void *arg)
+        ev_flag ef, event_callback_fn fn, void *arg)
     {
         // без метода не получится
         assert(queue && fn && empty());

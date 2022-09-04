@@ -5,6 +5,8 @@
 #include "e4pp/thread.hpp"
 #include "e4pp/listener.hpp"
 #include "e4pp/buffer_event.hpp"
+#include "e4pp/bev.hpp"
+#include "e4pp/util.hpp"
 
 #include <thread>
 #include <iostream>
@@ -13,22 +15,10 @@
 #include <chrono>
 #include <arpa/inet.h>
 
-std::ostream& output(std::ostream& os)
-{
-    return os;
-}
-
-inline std::ostream& cerr()
-{
-    return output(std::cerr);
-}
-
-inline std::ostream& cout()
-{
-    return output(std::cout);
-}
+namespace {
 
 using namespace std::literals;
+using namespace e4pp::util;
 
 class proxy_test
 {
@@ -43,14 +33,14 @@ class proxy_test
     e4pp::timer_fun timer_fun_{[]{
         cout() << "+timer fun" << std::endl;
     }};
-    e4pp::ev_heap evh_{queue_, -1, e4pp::flag{EV_TIMEOUT}, 
+    e4pp::ev_heap evh_{queue_, -1, e4pp::ev_flag{EV_TIMEOUT}, 
         std::chrono::milliseconds{570}, timer_fun_};
 
     e4pp::timer_fn<proxy_test> timer_fn_{
         &proxy_test::do_fn, *this };
     e4pp::ev_stack evs_{};
 
-    e4pp::evh::timer just_timer_{queue_, e4pp::flag::timeout(), []{
+    e4pp::evh::timer just_timer_{queue_, e4pp::ev_flag::timeout(), []{
             cout() << "just timer!" << std::endl;
         }};
 
@@ -98,7 +88,7 @@ void test_queue(e4pp::queue& queue)
     e4pp::timer_fun f2 = []{
         cout() << "move timer" << std::endl;
     };
-    queue.once(std::chrono::milliseconds{250}, std::move(f2));    
+    queue.once(std::chrono::milliseconds{250}, std::move(f2));
 
     auto f3 = [](evutil_socket_t, short) {
         cout() << "generic lambda" << std::endl;
@@ -132,6 +122,11 @@ int run()
     cout() << "config: " << sizeof(cfg) << std::endl;
     e4pp::buffer buf{};
     cout() << "buffer: " << sizeof(buf) << std::endl;
+
+    buf.sync([](auto& self){
+        self.append("some text");
+    });
+
     e4pp::buffer_event bev{};
     cout() << "buffer_event: " << sizeof(bev) << std::endl;
     e4pp::uri u("http://bot:123@localhost");
@@ -169,8 +164,14 @@ int run()
     };
 
     sockaddr_storage sa{};
-	int slen = sizeof(sa);
-    evutil_parse_sockaddr_port("[::]:32987", 
+    auto slen = int{sizeof(sa)};
+//    Recognized formats are:
+//    - [IPv6Address]:port
+//    - [IPv6Address]
+//    - IPv6Address
+//    - IPv4Address:port
+//    - IPv4Address
+    evutil_parse_sockaddr_port("[::1]:32987",
         reinterpret_cast<sockaddr*>(&sa), &slen);
 
     e4pp::listener listener{queue, 
@@ -195,13 +196,13 @@ int run()
     e4pp::timer_fun fh = []{
         cout() << "ev_heap timer!"sv << std::endl;
     };
-    e4pp::ev_heap evh(queue, -1, e4pp::flag{EV_TIMEOUT}, 
+    e4pp::ev_heap evh(queue, -1, e4pp::ev_flag{EV_TIMEOUT}, 
         std::chrono::milliseconds{600}, fh);
 
     e4pp::timer_fun fs = []{
         cout() << "ev_stack timer!"sv << std::endl;
     };
-    e4pp::ev_stack evs(queue, -1, e4pp::flag{EV_TIMEOUT}, 
+    e4pp::ev_stack evs(queue, -1, e4pp::ev_flag{EV_TIMEOUT}, 
         std::chrono::milliseconds{650}, fs);
 
     cout() << "run"sv << std::endl;
@@ -214,10 +215,14 @@ int run()
     return 0;
 }
 
+} 
+
 int main()
 {
-        //e4pp::startup();
+    //e4pp::startup();
     e4pp::use_threads();
+
+    e4pp::bev<int> b{};
 
     run();
 

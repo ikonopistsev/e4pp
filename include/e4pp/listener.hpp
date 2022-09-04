@@ -9,6 +9,21 @@ namespace e4pp {
 
 using listener_handle_type = evconnlistener*;
 
+struct lev_flag 
+{   
+    unsigned value_{};
+    
+    operator unsigned() const noexcept 
+    {
+        return value_;
+    }
+
+    constexpr static inline lev_flag def(unsigned lev = 0)
+    {
+        return {LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE|lev};
+    }
+};
+
 class listener final
 {
 public:
@@ -20,22 +35,18 @@ private:
         void operator()(handle_type ptr) noexcept 
         { 
             evconnlistener_free(ptr); 
-        };
+        }
     };
     using ptr_type = std::unique_ptr<evconnlistener, deallocate>;
     ptr_type handle_{};
 
 public:
-    constexpr static auto lev_opt = int{
-        LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE
-    };
-
     listener() = default;
     listener(listener&&) = default;
     listener& operator=(listener&&) = default;
 
     listener(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
-        evconnlistener_cb cb, void *arg, int backlog = 1024, flag fl = { lev_opt })
+        evconnlistener_cb cb, void *arg, int backlog = 1024, lev_flag fl = lev_flag::def())
         : handle_{detail::check_pointer("evconnlistener_new_bind",
             evconnlistener_new_bind(queue, cb, arg,
                 fl, backlog, sa, static_cast<int>(salen)))}
@@ -43,18 +54,18 @@ public:
 
     template<class F, class P>
     listener(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
-        std::pair<F, P> p, int backlog = 1024, flag fl = { lev_opt })
+        std::pair<F, P> p, int backlog = 1024, lev_flag fl = lev_flag::def())
         : listener{queue, sa, salen, p.second, p.first, backlog, fl}
     {   }
 
     template<class F>
     listener(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
-        F& fn, int backlog = 1024, flag fl = { lev_opt })
+        F& fn, int backlog = 1024, lev_flag fl = lev_flag::def())
         : listener{queue, sa, salen, proxy_call(fn), backlog, fl}
     {   }  
 
     void listen(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
-        evconnlistener_cb cb, void *arg, int backlog = 1024, flag fl = { lev_opt })
+        evconnlistener_cb cb, void *arg, int backlog = 1024, lev_flag fl = lev_flag::def())
     {
         handle_.reset(detail::check_pointer("evconnlistener_new_bind",
             evconnlistener_new_bind(queue, cb, arg,
@@ -63,14 +74,14 @@ public:
 
     template<class F, class P>
     void listen(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
-        std::pair<F, P> p, int backlog = 1024, flag fl = { lev_opt })
+        std::pair<F, P> p, int backlog = 1024, lev_flag fl = lev_flag::def())
     {   
         listen(queue, sa, salen, p.second, p.first, backlog, fl);
     }
 
     template<class F>
     void listen(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
-        F& fn, int backlog = 1024, flag fl = { lev_opt })
+        F& fn, int backlog = 1024, lev_flag fl = lev_flag::def())
     {   
         listen(queue, sa, salen, proxy_call(fn), backlog, fl);
     }  

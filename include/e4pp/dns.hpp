@@ -21,7 +21,7 @@ private:
         void operator()(handle_type ptr) noexcept 
         { 
             evdns_base_free(ptr, DNS_ERR_SHUTDOWN);
-        };
+        }
     };
     using ptr_type = std::unique_ptr<evdns_base, deallocate>;
     ptr_type handle_{};

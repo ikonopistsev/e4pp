@@ -18,7 +18,7 @@ private:
         void operator()(handle_type ptr) noexcept 
         { 
             event_base_free(ptr); 
-        };
+        }
     };
     using ptr_type = std::unique_ptr<event_base, deallocate>;
     ptr_type handle_{detail::check_pointer("event_base_new", 

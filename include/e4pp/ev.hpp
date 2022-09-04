@@ -45,37 +45,37 @@ public:
 
 // --- socket
     ev(queue_handle_type queue, evutil_socket_t fd, 
-        flag ef, H handler)
+        ev_flag ef, H handler)
         : parent_type{queue, fd, ef, handler_}
         , handler_{std::move(handler)}
     {   }
 
     ev(queue_handle_type queue, evutil_socket_t fd,
-        flag ef, const timeval& tv, H handler)
+        ev_flag ef, const timeval& tv, H handler)
         : parent_type{queue, fd, ef, handler_}
         , handler_{std::move(handler)}
     {   }
 
     template<class Rep, class Period>
-    ev(queue_handle_type queue, evutil_socket_t fd, flag ef, 
+    ev(queue_handle_type queue, evutil_socket_t fd, ev_flag ef, 
         std::chrono::duration<Rep, Period> timeout, H handler)
         : parent_type{queue, fd, ef, timeout, handler_}
         , handler_{std::move(handler)}
     {   }
 
 // --- timer
-    ev(queue_handle_type queue, flag ef, H handler)
+    ev(queue_handle_type queue, ev_flag ef, H handler)
         : parent_type{queue, ef, handler_}
         , handler_{std::move(handler)}
     {   }
 
-    ev(queue_handle_type queue, flag ef, const timeval& tv, H handler)
+    ev(queue_handle_type queue, ev_flag ef, const timeval& tv, H handler)
         : parent_type{queue, ef, tv, handler_}
         , handler_{std::move(handler)}
     {   }
 
     template<class Rep, class Period>
-    ev(queue_handle_type queue, flag ef, 
+    ev(queue_handle_type queue, ev_flag ef, 
         std::chrono::duration<Rep, Period> timeout, H handler)
         : parent_type{queue, ef, timeout, handler_}
         , handler_{std::move(handler)}

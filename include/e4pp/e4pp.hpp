@@ -39,26 +39,6 @@ T assert_handle(T handle) noexcept
     return handle;
 }
 
-struct flag 
-{   
-    int value_{};
-    
-    operator int() const noexcept 
-    {
-        return value_;
-    }
-
-    constexpr static inline flag timeout(int ef = 0) 
-    {
-        return { EV_TIMEOUT|ef };
-    }
-
-    constexpr static inline flag interval(int ef = 0) 
-    {
-        return { EV_TIMEOUT|EV_PERSIST|ef };
-    }
-};
-
 // static inline void startup(unsigned char h = 2, unsigned char l = 2)
 // {
 //     static const net::launch launch(h, l);

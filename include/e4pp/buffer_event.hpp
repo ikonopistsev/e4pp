@@ -10,12 +10,27 @@
 
 namespace e4pp {
 
+struct bev_flag 
+{   
+    int value_{};
+    
+    operator int() const noexcept 
+    {
+        return value_;
+    }
+
+    constexpr static inline bev_flag def(int opt = 0)
+    {
+        return {BEV_OPT_CLOSE_ON_FREE|opt};
+    }
+};
+
 using buffer_event_handle_type = bufferevent*;
 
-class buffer_event final
+class buffer_event
 {
 public:
-    using handle_type = buffer_event_handle_type;
+    using handle_type = buffer_event_handle_type;    
 
 private:
     struct deallocate 
@@ -23,7 +38,7 @@ private:
         void operator()(handle_type ptr) noexcept 
         { 
             bufferevent_free(ptr); 
-        };
+        }
     };
     std::unique_ptr<bufferevent, deallocate> handle_{};
 
@@ -60,20 +75,31 @@ public:
         assert(handle);
     }
 
-    // fd == -1 // create new socket
+    // fd == -1
+    // create new socket
     buffer_event(queue_handle_type queue,
-        evutil_socket_t fd, int opt = BEV_OPT_CLOSE_ON_FREE)
+        evutil_socket_t fd, bev_flag opt = bev_flag::def())
         : buffer_event{detail::check_pointer("bufferevent_socket_new",
             bufferevent_socket_new(queue, fd, opt))}
     {   }
 
-    // fd == -1 // create new socket
+    buffer_event(queue_handle_type queue, bev_flag opt = bev_flag::def())
+        : buffer_event{queue, -1, opt}
+    {   }
+
+    // fd == -1
+    // create new socket
     void create(queue_handle_type queue,
-        evutil_socket_t fd, int opt = BEV_OPT_CLOSE_ON_FREE)
+        evutil_socket_t fd, bev_flag opt = bev_flag::def())
     {
         assert(queue);
         handle_.reset(detail::check_pointer("bufferevent_socket_new",
             bufferevent_socket_new(queue, fd, opt)));
+    }
+
+    void create(queue_handle_type queue, bev_flag opt = bev_flag::def())
+    {
+        create(queue, -1, opt);
     }
 
     void destroy() noexcept
@@ -109,7 +135,8 @@ public:
                 const_cast<sockaddr*>(sa), static_cast<int>(len)));
     }
 
-    void connect(dns_handle_type dns, int af, const std::string& hostname, int port)
+    void connect(dns_handle_type dns, int af,
+        const std::string& hostname, int port)
     {
         assert(dns);
         detail::check_result("bufferevent_socket_connect_hostname",

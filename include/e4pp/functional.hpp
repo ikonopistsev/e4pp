@@ -1,6 +1,6 @@
 #pragma once
 
-#include "e4pp/e4pp.hpp"
+#include "e4pp/buffer.hpp"
 #include <functional>
 
 struct evconnlistener;
@@ -56,12 +56,43 @@ struct acceptor_fn final
     fn_type fn_{};
     T& self_;
 
-    void call(evconnlistener*, evutil_socket_t fd, 
-        sockaddr* sockaddr, int socklen, void*) noexcept
+    void call(evutil_socket_t fd, sockaddr* sockaddr, int socklen) noexcept
     {
         assert(fn_);
         try {
             (self_.*fn_)(fd, sockaddr, socklen);
+        } 
+        catch (...)
+        {   }
+    }
+};
+
+template<class T>
+struct event_fn
+{
+    using fn_type = void (T::*)(short what);
+    using data_fn_type = void (T::*)(buffer_ref, short);
+    using self_type = T;
+
+    fn_type fn_{};
+    data_fn_type data_fn_{};
+    T& self_;
+
+    void call(short what) noexcept
+    {
+        assert(fn_);
+        try {
+            (self_.*fn_)(what);
+        } 
+        catch (...)
+        {   }
+    }
+
+    void read(buffer_ref buf, short what) noexcept
+    {
+        assert(data_fn_);
+        try {
+            (self_.*data_fn_)(std::move(buf), what);
         } 
         catch (...)
         {   }
@@ -90,6 +121,37 @@ constexpr auto proxy_call(generic_fn<T>& fn)
             assert(arg);
             try {
                 static_cast<generic_fn<T>*>(arg)->call(fd, ef);
+            }
+            catch (...)
+            {   }
+        });
+}
+
+template<class T>
+constexpr auto proxy_call(event_fn<T>& fn)
+{
+    return std::make_tuple(&fn,
+        [](struct bufferevent*, short what, void *arg){
+            assert(arg);
+            try {
+                static_cast<event_fn<T>*>(arg)->call(what);
+            }
+            catch (...)
+            {   }
+        },
+        [](struct bufferevent* bev, void *arg){
+            assert(arg);
+            try {
+                auto f = bufferevent_get_input(bev);
+                static_cast<event_fn<T>*>(arg)->read(buffer_ref(f), EV_READ);
+            }
+            catch (...)
+            {   }
+        },
+        [](struct bufferevent*, void *arg){
+            assert(arg);
+            try {
+                static_cast<event_fn<T>*>(arg)->call(EV_WRITE);
             }
             catch (...)
             {   }
