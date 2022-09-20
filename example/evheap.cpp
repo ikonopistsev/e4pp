@@ -33,14 +33,14 @@ class proxy_test
     e4pp::timer_fun timer_fun_{[]{
         cout() << "+timer fun" << std::endl;
     }};
-    e4pp::ev_heap evh_{queue_, -1, e4pp::ev_flag{EV_TIMEOUT}, 
+    e4pp::ev_heap evh_{queue_, -1, e4pp::ev_timeout|e4pp::ev_persist, 
         std::chrono::milliseconds{570}, timer_fun_};
 
     e4pp::timer_fn<proxy_test> timer_fn_{
         &proxy_test::do_fn, *this };
     e4pp::ev_stack evs_{};
 
-    e4pp::evh::timer just_timer_{queue_, e4pp::ev_flag::timeout(), []{
+    e4pp::evh::timer just_timer_{queue_, e4pp::ev_timeout, []{
             cout() << "just timer!" << std::endl;
         }};
 
@@ -183,7 +183,7 @@ int run()
     e4pp::queue thr_queue{};
     std::thread thr([&]{
         thr_queue.loopexit(std::chrono::seconds{20});
-        thr_queue.loop(EVLOOP_NO_EXIT_ON_EMPTY);
+        thr_queue.loop(e4pp::evloop_no_exit_on_empty);
         queue.once([&]{
             queue.loop_break();
         });
@@ -196,13 +196,13 @@ int run()
     e4pp::timer_fun fh = []{
         cout() << "ev_heap timer!"sv << std::endl;
     };
-    e4pp::ev_heap evh(queue, -1, e4pp::ev_flag{EV_TIMEOUT}, 
+    e4pp::ev_heap evh(queue, -1, e4pp::ev_timeout, 
         std::chrono::milliseconds{600}, fh);
 
     e4pp::timer_fun fs = []{
         cout() << "ev_stack timer!"sv << std::endl;
     };
-    e4pp::ev_stack evs(queue, -1, e4pp::ev_flag{EV_TIMEOUT}, 
+    e4pp::ev_stack evs(queue, -1, e4pp::ev_timeout, 
         std::chrono::milliseconds{650}, fs);
 
     cout() << "run"sv << std::endl;
@@ -215,7 +215,7 @@ int run()
     return 0;
 }
 
-} 
+}
 
 int main()
 {

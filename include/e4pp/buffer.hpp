@@ -16,7 +16,7 @@ using evbufer_ptr = evbuffer*;
 
 namespace detail {
 
-struct buf_ref_allocator
+struct buf_ref_allocator final
 {
     constexpr static inline evbufer_ptr allocate() noexcept
     {
@@ -27,7 +27,7 @@ struct buf_ref_allocator
     {   }
 };
 
-struct buf_allocator
+struct buf_allocator final
 {
     static auto allocate()
     {
@@ -50,7 +50,7 @@ using buffer_ref = basic_buffer<detail::buf_ref_allocator>;
 using buffer = basic_buffer<detail::buf_allocator>;
 
 template<class A>
-class basic_buffer
+class basic_buffer final
 {
     using this_type = basic_buffer<A>;
 

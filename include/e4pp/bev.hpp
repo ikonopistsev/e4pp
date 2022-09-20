@@ -17,6 +17,8 @@ class bev final
 public:
     bev() = default;
     
+    //bev(event_hadnle ev)
+    
     using buffer_event::set;
 
         // fd == -1
@@ -30,11 +32,11 @@ public:
     }
 
     bev(queue_handle_type queue, evutil_socket_t fd, 
-        H handler, bev_flag opt = bev_flag::def())
+        H handler, bev_flag opt = bev_close_on_free)
         : buffer_event{queue, fd, opt}
     {   }
 
-    bev(queue_handle_type queue, bev_flag opt = bev_flag::def())
+    bev(queue_handle_type queue, bev_flag opt = bev_close_on_free)
         : buffer_event{queue, opt}
     {   }
 

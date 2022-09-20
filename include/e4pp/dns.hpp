@@ -16,7 +16,7 @@ public:
             EVDNS_BASE_DISABLE_WHEN_INACTIVE };
 
 private:
-    struct deallocate 
+    struct deallocate final
     {
         void operator()(handle_type ptr) noexcept 
         { 

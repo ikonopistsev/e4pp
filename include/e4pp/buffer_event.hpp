@@ -10,22 +10,14 @@
 
 namespace e4pp {
 
-struct bev_flag 
-{   
-    int value_{};
-    
-    operator int() const noexcept 
-    {
-        return value_;
-    }
-
-    constexpr static inline bev_flag def(int opt = 0)
-    {
-        return {BEV_OPT_CLOSE_ON_FREE|opt};
-    }
-};
-
 using buffer_event_handle_type = bufferevent*;
+
+using bev_flag = detail::ev_mask_flag<bufferevent, BEV_OPT_CLOSE_ON_FREE|
+    BEV_OPT_THREADSAFE|BEV_OPT_DEFER_CALLBACKS|BEV_OPT_UNLOCK_CALLBACKS>;
+constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_CLOSE_ON_FREE> bev_close_on_free{};
+constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_THREADSAFE> bev_threadsafe{};
+constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_DEFER_CALLBACKS> bev_defer_callbacks{};
+constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_UNLOCK_CALLBACKS> bev_unlock_callbacks{};
 
 class buffer_event
 {
@@ -33,7 +25,7 @@ public:
     using handle_type = buffer_event_handle_type;    
 
 private:
-    struct deallocate 
+    struct deallocate final
     {
         void operator()(handle_type ptr) noexcept 
         { 
@@ -78,26 +70,26 @@ public:
     // fd == -1
     // create new socket
     buffer_event(queue_handle_type queue,
-        evutil_socket_t fd, bev_flag opt = bev_flag::def())
+        evutil_socket_t fd, bev_flag opt = bev_close_on_free)
         : buffer_event{detail::check_pointer("bufferevent_socket_new",
             bufferevent_socket_new(queue, fd, opt))}
     {   }
 
-    buffer_event(queue_handle_type queue, bev_flag opt = bev_flag::def())
+    buffer_event(queue_handle_type queue, bev_flag opt = bev_close_on_free)
         : buffer_event{queue, -1, opt}
     {   }
 
     // fd == -1
     // create new socket
     void create(queue_handle_type queue,
-        evutil_socket_t fd, bev_flag opt = bev_flag::def())
+        evutil_socket_t fd, bev_flag opt = bev_close_on_free)
     {
         assert(queue);
         handle_.reset(detail::check_pointer("bufferevent_socket_new",
             bufferevent_socket_new(queue, fd, opt)));
     }
 
-    void create(queue_handle_type queue, bev_flag opt = bev_flag::def())
+    void create(queue_handle_type queue, bev_flag opt = bev_close_on_free)
     {
         create(queue, -1, opt);
     }

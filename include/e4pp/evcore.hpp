@@ -89,18 +89,18 @@ public:
 
     template<class F>
     evcore(queue_handle_type queue, F& fn)
-        : evcore{queue, -1, ev_flag{EV_TIMEOUT}, fn}
+        : evcore{queue, -1, ev_timeout, fn}
     {   }  
 
     template<class F>
     evcore(queue_handle_type queue, const timeval& tv, F& fn)
-        : evcore{queue, -1, ev_flag{EV_TIMEOUT}, tv, fn}
+        : evcore{queue, -1, ev_timeout, tv, fn}
     {   }
 
     template<class F, class Rep, class Period>
     evcore(queue_handle_type queue,
         std::chrono::duration<Rep, Period> timeout, F& fn)
-        : evcore{queue, -1, ev_flag{EV_TIMEOUT}, timeout, fn}
+        : evcore{queue, -1, ev_timeout, timeout, fn}
     {   }
 
     void create(queue_handle_type queue, evutil_socket_t fd, ev_flag ef,
@@ -123,17 +123,16 @@ public:
         create(queue, fd, ef, proxy_call(fn));
     }  
 
-    template<class F>
-    void create(queue_handle_type queue, ev_flag ef, F& fn)
+    template<class F, int V>
+    void create(queue_handle_type queue, detail::ev_flag_tag<event, V> ft, F& fn)
     {   
-        ev_flag f{static_cast<short>(ef|EV_TIMEOUT)};
-        create(queue, -1, f, fn);
+        create(queue, -1, {ft|ev_timeout}, fn);
     }  
 
     template<class F>
     void create(queue_handle_type queue, F& fn)
     {   
-        create(queue, -1, ev_flag{EV_TIMEOUT}, fn);
+        create(queue, -1, ev_timeout, fn);
     } 
 
 // api

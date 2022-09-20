@@ -5,25 +5,16 @@
 
 namespace e4pp {
 
-struct ev_flag 
-{   
-    int value_{};
-    
-    operator int() const noexcept 
-    {
-        return value_;
-    }
-
-    constexpr static inline ev_flag timeout(int ef = 0) 
-    {
-        return { EV_TIMEOUT|ef };
-    }
-
-    constexpr static inline ev_flag interval(int ef = 0) 
-    {
-        return { EV_TIMEOUT|EV_PERSIST|ef };
-    }
-};
+using ev_flag = detail::ev_mask_flag<event, EV_TIMEOUT|EV_READ|EV_WRITE|
+    EV_SIGNAL|EV_PERSIST|EV_ET|EV_FINALIZE|EV_CLOSED>;
+constexpr detail::ev_flag_tag<event, EV_TIMEOUT> ev_timeout{};
+constexpr detail::ev_flag_tag<event, EV_READ> ev_read{};
+constexpr detail::ev_flag_tag<event, EV_WRITE> ev_write{};
+constexpr detail::ev_flag_tag<event, EV_SIGNAL> ev_signal{};
+constexpr detail::ev_flag_tag<event, EV_PERSIST> ev_persist{};
+constexpr detail::ev_flag_tag<event, EV_ET> ev_et{};
+constexpr detail::ev_flag_tag<event, EV_FINALIZE> ev_finalize{};
+constexpr detail::ev_flag_tag<event, EV_CLOSED> ev_closed{};
 
 class heap_event final
 {
@@ -31,7 +22,7 @@ public:
     using handle_type = event_handle_type;
 
 private:
-    struct deallocate 
+    struct deallocate final
     {
         void operator()(handle_type ptr) noexcept 
         { 

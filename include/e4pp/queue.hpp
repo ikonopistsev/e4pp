@@ -7,13 +7,34 @@
 
 namespace e4pp {
 
+#ifdef EVENT_MAX_PRIORITIES
+
+struct priority final
+{   
+    int val_{};
+
+    constexpr operator int() const noexcept 
+    {
+        return val_;
+    }
+};
+
+#endif // EVENT_MAX_PRIORITIES
+
+using evloop_flag = detail::ev_mask_flag<event_base, EVLOOP_ONCE|
+    EVLOOP_NONBLOCK|EVLOOP_NO_EXIT_ON_EMPTY>;
+constexpr detail::ev_flag_tag<event_base, EVLOOP_ONCE> evloop_once{};
+constexpr detail::ev_flag_tag<event_base, EVLOOP_NONBLOCK> evloop_nonblock{};
+constexpr detail::ev_flag_tag<event_base, EVLOOP_NO_EXIT_ON_EMPTY> 
+    evloop_no_exit_on_empty{};
+
 class queue final
 {
 public:
     using handle_type = queue_handle_type;
 
 private:
-    struct deallocate 
+    struct deallocate final
     {
         void operator()(handle_type ptr) noexcept 
         { 
@@ -92,10 +113,10 @@ public:
         return dispatch();
     }
 
-    bool loop(int flags)
+    bool loop(evloop_flag val)
     {
         return 0 == detail::check_result("event_base_loop",
-            event_base_loop(assert_handle(handle()), flags));
+            event_base_loop(assert_handle(handle()), val));
     }
 
     void loopexit(const timeval& tv)
@@ -122,7 +143,7 @@ public:
     }
 
 #ifdef EVENT_MAX_PRIORITIES
-    void priority_init(int level)
+    void priority_init(priority level)
     {
         detail::check_result("event_base_priority_init",
             event_base_priority_init(assert_handle(handle()), level));

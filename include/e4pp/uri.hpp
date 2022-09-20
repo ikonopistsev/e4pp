@@ -15,7 +15,7 @@ public:
     using handle_type = uri_handle_type;
 
 private:
-    struct deallocate 
+    struct deallocate final
     {
         void operator()(handle_type ptr) noexcept 
         { 

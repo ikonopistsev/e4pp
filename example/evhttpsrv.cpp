@@ -1,5 +1,7 @@
 #include "e4pp/http.hpp"
 #include "e4pp/util.hpp"
+#include "e4pp/evtype.hpp"
+#include "e4pp/buffer_event.hpp"
 
 int main()
 {
@@ -10,11 +12,11 @@ int main()
 
     try
     {
-        //e4pp::config cfg{};
-        e4pp::queue queue{e4pp::config{}};
+        e4pp::config cfg{e4pp::ev_feature_et};
+        e4pp::queue queue{cfg};
         e4pp::server srv{queue};
         e4pp::vhost localhost{queue, srv, "localhost"};
-        const char *bind_addr = "0.0.0.0";
+        constexpr auto bind_addr = "0.0.0.0";
         constexpr auto bind_port = 27321;
 
         cout() << "listen: "sv << bind_addr << ":" << bind_port << std::endl;
@@ -28,7 +30,7 @@ int main()
 
         // test: curl -v http://localhost:27321/123
 
-        queue.dispatch(std::chrono::seconds(10));
+        queue.dispatch(std::chrono::seconds{10});
 
         trace([]{
             return "bye"sv;
