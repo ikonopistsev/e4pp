@@ -1,7 +1,30 @@
+#include "e4pp/ev.hpp"
 #include "e4pp/http.hpp"
 #include "e4pp/util.hpp"
-#include "e4pp/evtype.hpp"
 #include "e4pp/buffer_event.hpp"
+#ifndef _WIN32
+#include <signal.h>
+#else
+namespace {
+
+struct wsa
+{
+    wsa(unsigned char h, unsigned char l)
+    {
+        WSADATA w;
+        auto err = ::WSAStartup(MAKEWORD(h, l), &w);
+        if (0 != err)
+            throw std::system_error(error_code(), "::WSAStartup");
+    }
+
+    ~wsa() noexcept
+    {
+        ::WSACleanup();
+    }
+};
+
+}
+#endif // _WIN32
 
 int main()
 {
@@ -12,12 +35,29 @@ int main()
 
     try
     {
-        e4pp::config cfg{e4pp::ev_feature_et};
+#ifndef _WIN32
+        e4pp::config cfg{e4pp::ev_feature_et|
+            e4pp::ev_feature_01|e4pp::ev_feature_early_close};
         e4pp::queue queue{cfg};
+
+        auto f = [&](auto,auto){
+            queue.loop_break();
+        };
+        e4pp::ev_stack sint;
+        sint.create(queue, SIGINT, e4pp::ev_signal|e4pp::ev_persist, f);
+        sint.add();
+        e4pp::ev_stack sterm;
+        sterm.create(queue, SIGTERM, e4pp::ev_signal|e4pp::ev_persist, f);
+        sterm.add();
+#else
+        wsa w{2, 2};
+        e4pp::config cfg{};
+        e4pp::queue queue{cfg};
+#endif // _WIN32
         e4pp::server srv{queue};
         e4pp::vhost localhost{queue, srv, "localhost"};
-        constexpr auto bind_addr = "0.0.0.0";
-        constexpr auto bind_port = 27321;
+        auto bind_addr = "0.0.0.0";
+        auto bind_port = 27321;
 
         cout() << "listen: "sv << bind_addr << ":" << bind_port << std::endl;
 
@@ -29,7 +69,6 @@ int main()
         }, nullptr);
 
         // test: curl -v http://localhost:27321/123
-
         queue.dispatch(std::chrono::seconds{10});
 
         trace([]{

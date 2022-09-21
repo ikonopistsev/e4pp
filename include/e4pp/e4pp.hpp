@@ -39,11 +39,6 @@ T assert_handle(T handle) noexcept
     return handle;
 }
 
-// static inline void startup(unsigned char h = 2, unsigned char l = 2)
-// {
-//     static const net::launch launch(h, l);
-// }
-
 namespace detail {
 
 template<class, int>
