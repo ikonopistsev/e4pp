@@ -40,7 +40,7 @@ int main()
             e4pp::ev_feature_01|e4pp::ev_feature_early_close};
         e4pp::queue queue{cfg};
 
-        auto f = [&](auto,auto){
+        auto f = [&](auto, auto){
             queue.loop_break();
         };
         e4pp::ev_stack sint;

@@ -3,7 +3,6 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
-#include <mutex>
 
 namespace e4pp {
 namespace util {
@@ -11,8 +10,9 @@ namespace util {
 static bool verbose = false;
 static auto& stdcerr = std::cerr;
 static auto& stdcout = std::cout;
-static auto stdoutput = [](std::ostream& os) noexcept -> std::ostream& {
-    static std::mutex mutex;
+
+using output_type = std::function<std::ostream&(std::ostream&)>;
+static output_type stdoutput = [](std::ostream& os) noexcept -> std::ostream& {
     namespace ch = std::chrono;
     auto n = ch::system_clock::now();
     auto d = n.time_since_epoch();
@@ -20,7 +20,6 @@ static auto stdoutput = [](std::ostream& os) noexcept -> std::ostream& {
     auto t = static_cast<std::time_t>(
         ch::duration_cast<ch::seconds>(d).count());
     auto tm = *std::gmtime(&t);
-    std::lock_guard<std::mutex> l(mutex);
     return os << std::put_time(&tm, "%FT%T")
         << '.' << std::setfill('0') << std::setw(3) << ms << 'Z' << ' ';
 };

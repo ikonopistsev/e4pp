@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <cassert>
 #include <chrono>
+#include <mutex>
 #ifndef _WIN32
 #include <arpa/inet.h>
 #else 
@@ -244,9 +245,15 @@ int main()
 #ifdef _WIN32
     wsa w{2, 2};
 #endif
-
     //e4pp::startup();
     e4pp::use_threads();
+    // make output threadsafe
+    e4pp::util::stdoutput = [&, output = e4pp::util::stdoutput]
+        (std::ostream& os) noexcept -> std::ostream& {
+            static std::mutex mutex{};
+            std::lock_guard<std::mutex> l{mutex};
+        return output(os);
+    };
 
     e4pp::bev<int> b{};
 
