@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <functional>
 
 namespace e4pp {
 namespace util {
@@ -19,8 +20,7 @@ static output_type stdoutput = [](std::ostream& os) noexcept -> std::ostream& {
     auto ms = ch::duration_cast<ch::milliseconds>(d).count() % 1000;
     auto t = static_cast<std::time_t>(
         ch::duration_cast<ch::seconds>(d).count());
-    auto tm = *std::gmtime(&t);
-    return os << std::put_time(&tm, "%FT%T")
+    return os << std::put_time(std::gmtime(&t), "%FT%T")
         << '.' << std::setfill('0') << std::setw(3) << ms << 'Z' << ' ';
 };
 

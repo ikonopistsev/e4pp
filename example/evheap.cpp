@@ -245,17 +245,15 @@ int main()
 #ifdef _WIN32
     wsa w{2, 2};
 #endif
-    //e4pp::startup();
     e4pp::use_threads();
     // make output threadsafe
-    e4pp::util::stdoutput = [&, output = e4pp::util::stdoutput]
-        (std::ostream& os) noexcept -> std::ostream& {
-            static std::mutex mutex{};
+    // replace util::stdoutput
+    std::mutex mutex{};
+    e4pp::util::stdoutput = 
+        [&, output = e4pp::util::stdoutput] (std::ostream& os) -> std::ostream& {
             std::lock_guard<std::mutex> l{mutex};
-        return output(os);
+            return output(os);
     };
-
-    e4pp::bev<int> b{};
 
     run();
 
