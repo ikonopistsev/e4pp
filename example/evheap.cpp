@@ -248,9 +248,9 @@ int main()
     e4pp::use_threads();
     // make output threadsafe
     // replace util::stdoutput
-    std::mutex mutex{};
     e4pp::util::stdoutput = 
         [&, output = e4pp::util::stdoutput] (std::ostream& os) -> std::ostream& {
+            static std::mutex mutex{};
             std::lock_guard<std::mutex> l{mutex};
             return output(os);
     };
