@@ -14,7 +14,7 @@ struct wsa
         WSADATA w;
         auto err = ::WSAStartup(MAKEWORD(h, l), &w);
         if (0 != err)
-            throw std::system_error(error_code(), "::WSAStartup");
+            throw std::runtime_error("WSAStartup");
     }
 
     ~wsa() noexcept

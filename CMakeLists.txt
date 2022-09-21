@@ -19,6 +19,11 @@ target_include_directories(
 option(E4PP_BUILD_EXAMPLES "build examples" OFF)
 
 if (E4PP_BUILD_EXAMPLES)
+    option(E4PP_STATIC_LIBEVENT "use static libevent" OFF)
+    if (E4PP_STATIC_LIBEVENT)
+        add_subdirectory(ext/libevent)
+        include_directories(ext/libevent/include ${CMAKE_CURRENT_BINARY_DIR}/ext/libevent/include)
+    endif()
     add_subdirectory(example)
 endif()
 

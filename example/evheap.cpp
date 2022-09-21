@@ -13,7 +13,29 @@
 #include <signal.h>
 #include <cassert>
 #include <chrono>
+#ifndef _WIN32
 #include <arpa/inet.h>
+#else 
+namespace {
+
+struct wsa
+{
+    wsa(unsigned char h, unsigned char l)
+    {
+        WSADATA w;
+        auto err = ::WSAStartup(MAKEWORD(h, l), &w);
+        if (0 != err)
+            throw std::runtime_error("WSAStartup");
+    }
+
+    ~wsa() noexcept
+    {
+        ::WSACleanup();
+    }
+};
+
+}
+#endif
 
 namespace {
 
@@ -219,6 +241,10 @@ int run()
 
 int main()
 {
+#ifdef _WIN32
+    wsa w{2, 2};
+#endif
+
     //e4pp::startup();
     e4pp::use_threads();
 
