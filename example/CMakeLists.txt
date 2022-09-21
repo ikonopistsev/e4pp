@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if (WIN32)
   set(LIBEVENT_STATIC_LINK TRUE)
   # on windows change hints
-  find_package (libevent 2.2 REQUIRED HINTS "../../libevent/build")
+  find_package (libevent 2.2 REQUIRED HINTS "../../libevent/build-threadtux")
 endif()
 
 add_executable(evheap evheap.cpp)

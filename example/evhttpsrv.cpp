@@ -1,10 +1,10 @@
 #include "e4pp/ev.hpp"
 #include "e4pp/http.hpp"
 #include "e4pp/util.hpp"
-#include "e4pp/buffer_event.hpp"
-#ifndef _WIN32
+#include "e4pp/thread.hpp"
+// https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/signal?view=msvc-140
 #include <signal.h>
-#else
+#ifdef _WIN32
 namespace {
 
 struct wsa
@@ -38,8 +38,12 @@ int main()
 #ifndef _WIN32
         e4pp::config cfg{e4pp::ev_feature_et|
             e4pp::ev_feature_01|e4pp::ev_feature_early_close};
+#else
+        wsa w{2, 2};
+        e4pp::use_threads();
+        e4pp::config cfg{e4pp::ev_base_startup_iocp};
+#endif // _WIN32
         e4pp::queue queue{cfg};
-
         auto f = [&](auto, auto){
             queue.loop_break();
         };
@@ -49,11 +53,7 @@ int main()
         e4pp::ev_stack sterm;
         sterm.create(queue, SIGTERM, e4pp::ev_signal|e4pp::ev_persist, f);
         sterm.add();
-#else
-        wsa w{2, 2};
-        e4pp::config cfg{};
-        e4pp::queue queue{cfg};
-#endif // _WIN32
+
         e4pp::server srv{queue};
         e4pp::vhost localhost{queue, srv, "localhost"};
         auto bind_addr = "0.0.0.0";
