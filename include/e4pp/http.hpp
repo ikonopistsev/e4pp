@@ -3,6 +3,26 @@
 #include "e4pp/vhost.hpp"
 
 namespace e4pp {
+namespace http {
+
+using cmd_type = detail::ev_mask_flag<evhttp_cmd_type, EVHTTP_REQ_GET|EVHTTP_REQ_POST|
+EVHTTP_REQ_HEAD|EVHTTP_REQ_PUT|EVHTTP_REQ_DELETE|EVHTTP_REQ_OPTIONS|
+EVHTTP_REQ_TRACE|EVHTTP_REQ_CONNECT|EVHTTP_REQ_PATCH>;
+
+namespace method {
+
+constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_GET> get{};
+constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_POST> post{};
+constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_HEAD> head{};
+constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PUT> put{};
+constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_DELETE> del{};
+constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_OPTIONS> options{};
+constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_TRACE> trace{};
+constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_CONNECT> connect{};
+constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PATCH> patch{};
+
+} // namespace method
+} // namespace http
 
 class server
     : public vhost
@@ -32,13 +52,19 @@ public:
     {
         evhttp_set_timeout(assert_handle(), timeout_in_secs);
     }
+
+    void set_default_content_type(const char *content_type) noexcept
+    {
+        assert(content_type);
+        evhttp_set_default_content_type(assert_handle(), content_type);
+    }
 };
 
 using request_handle_type = evhttp_request*;
 
 namespace detail {
 
-struct req_ref_allocator
+struct req_ref_allocator final
 {
     constexpr static inline request_handle_type allocate() noexcept
     {
@@ -49,7 +75,7 @@ struct req_ref_allocator
     {   }
 };
 
-struct req_allocator
+struct req_allocator final
 {
     static auto allocate()
     {

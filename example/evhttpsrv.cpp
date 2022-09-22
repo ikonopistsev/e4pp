@@ -62,9 +62,10 @@ int main()
         cout() << "listen: "sv << bind_addr << ":" << bind_port << std::endl;
 
         srv.bind_socket(bind_addr, bind_port);
+        srv.set_default_content_type("application/json");
         evhttp_set_cb(localhost, "/123", [] (evhttp_request *req, void *) {
             e4pp::buffer b;
-            b.append("ok!"sv);
+            b.append("{\"code\":200,\"message\":\"ok\"}"sv);
             evhttp_send_reply(req, 200, "ok", b);
         }, nullptr);
 
