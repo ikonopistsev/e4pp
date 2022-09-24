@@ -54,8 +54,8 @@ int main()
         sterm.create(queue, SIGTERM, e4pp::ev_signal|e4pp::ev_persist, f);
         sterm.add();
 
-        e4pp::server srv{queue};
-        e4pp::vhost localhost{queue, srv, "localhost"};
+        e4pp::http::server srv{queue};
+        e4pp::http::vhost localhost{queue, srv, "localhost"};
         auto bind_addr = "0.0.0.0";
         auto bind_port = 27321;
 
@@ -65,7 +65,7 @@ int main()
         srv.set_default_content_type("application/json");
         srv.set_allowed_methods(e4pp::http::method::post);
         srv.set_timeout(std::chrono::seconds{3});
-        srv.set_flags(e4pp::lingering_close);
+        srv.set_flags(e4pp::http::lingering_close);
         evhttp_set_cb(localhost, "/123", [] (evhttp_request *req, void *) {
             e4pp::buffer b;
             b.append("{\"code\":200,\"message\":\"ok\"}"sv);
