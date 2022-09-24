@@ -3,26 +3,9 @@
 #include "e4pp/vhost.hpp"
 
 namespace e4pp {
-namespace http {
 
-using cmd_type = detail::ev_mask_flag<evhttp_cmd_type, EVHTTP_REQ_GET|EVHTTP_REQ_POST|
-EVHTTP_REQ_HEAD|EVHTTP_REQ_PUT|EVHTTP_REQ_DELETE|EVHTTP_REQ_OPTIONS|
-EVHTTP_REQ_TRACE|EVHTTP_REQ_CONNECT|EVHTTP_REQ_PATCH>;
-
-namespace method {
-
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_GET> get{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_POST> post{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_HEAD> head{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PUT> put{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_DELETE> del{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_OPTIONS> options{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_TRACE> trace{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_CONNECT> connect{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PATCH> patch{};
-
-} // namespace method
-} // namespace http
+using evhttp_flags = detail::ev_mask_flag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE>;
+constexpr detail::ev_flag_tag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE> lingering_close{};
 
 class server
     : public vhost
@@ -57,6 +40,39 @@ public:
     {
         assert(content_type);
         evhttp_set_default_content_type(assert_handle(), content_type);
+    }
+
+    void set_max_headers_size(ev_ssize_t max_headers_size)
+    {
+        evhttp_set_max_headers_size(assert_handle(), max_headers_size);
+    }
+
+    void set_max_body_size(ev_ssize_t max_body_size)
+    {
+        evhttp_set_max_body_size(assert_handle(), max_body_size);
+    }
+
+    void set_allowed_methods(http::cmd_type methods)
+    {
+        evhttp_set_allowed_methods(assert_handle(), 
+            static_cast<uint16_t>(methods));
+    }
+
+    void set_timeout(const timeval& tv)
+    {
+        evhttp_set_timeout_tv(assert_handle(), &tv);
+    }
+
+    template<class Rep, class Period>
+    void set_timeout(std::chrono::duration<Rep, Period> timeout)
+    {
+        set_timeout(make_timeval(timeout));
+    }
+
+    void set_flags(evhttp_flags f)
+    {
+        detail::check_result("evhttp_set_flags",
+            evhttp_set_flags(assert_handle(), f));
     }
 };
 

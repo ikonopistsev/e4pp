@@ -14,7 +14,7 @@ struct wsa
         WSADATA w;
         auto err = ::WSAStartup(MAKEWORD(h, l), &w);
         if (0 != err)
-            throw std::runtime_error("WSAStartup");
+            throw std::runtime_error("::WSAStartup");
     }
 
     ~wsa() noexcept
@@ -63,6 +63,9 @@ int main()
 
         srv.bind_socket(bind_addr, bind_port);
         srv.set_default_content_type("application/json");
+        srv.set_allowed_methods(e4pp::http::method::post);
+        srv.set_timeout(std::chrono::seconds{3});
+        srv.set_flags(e4pp::lingering_close);
         evhttp_set_cb(localhost, "/123", [] (evhttp_request *req, void *) {
             e4pp::buffer b;
             b.append("{\"code\":200,\"message\":\"ok\"}"sv);
@@ -70,6 +73,8 @@ int main()
         }, nullptr);
 
         // test: curl -v http://localhost:27321/123
+        // http post 1 byte per sec
+        // curl -v http://localhost:27321/123 -d '1234567890' --limit-rate 1
         queue.dispatch(std::chrono::seconds{10});
 
         trace([]{

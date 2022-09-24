@@ -7,19 +7,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(e4pp INTERFACE) 
 
-target_include_directories(
-    e4pp INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
+target_include_directories(e4pp INTERFACE 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> 
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # i don't know for what
 # add_library(e4pp::e4pp ALIAS e4pp)
 
 option(E4PP_BUILD_EXAMPLES "build examples" OFF)
 
-
 if (E4PP_BUILD_EXAMPLES)
+    if (WIN32)
+        set(LIBEVENT_STATIC_LINK TRUE)
+        add_subdirectory(ext/libevent)
+    endif()
     add_subdirectory(example)
 endif()
 
@@ -28,12 +29,10 @@ endif()
 include(GNUInstallDirs)
 
 # Install the library
-install(
-    TARGETS e4pp
-    EXPORT e4ppTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+install(TARGETS e4pp 
+    EXPORT e4ppTargets 
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 # Install the headers
 install(
