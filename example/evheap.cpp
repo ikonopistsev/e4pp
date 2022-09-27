@@ -144,6 +144,7 @@ int run()
     e4pp::config cfg{};
     cout() << "config: " << sizeof(cfg) << std::endl;
     e4pp::buffer buf{};
+    buf += "123"sv;
     cout() << "buffer: " << sizeof(buf) << std::endl;
 
     buf.sync([](auto& self){

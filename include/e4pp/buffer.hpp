@@ -183,6 +183,12 @@ public:
         append(text.data(), text.size());
     }
 
+    template<class V>
+    void operator+=(V val)
+    {
+        append(val);
+    }
+
     // Prepends data to the beginning of the evbuffer
     void prepend(const void *data, std::size_t len)
     {
