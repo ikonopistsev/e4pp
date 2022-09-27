@@ -3,6 +3,7 @@
 #include "e4pp/vhost.hpp"
 
 namespace e4pp {
+namespace http {
 
 using evhttp_flags = detail::ev_mask_flag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE>;
 constexpr detail::ev_flag_tag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE> lingering_close{};
@@ -95,7 +96,7 @@ struct req_allocator final
 {
     static auto allocate()
     {
-        return detail::check_pointer("evhttp_request_new",
+        return e4pp::detail::check_pointer("evhttp_request_new",
             evhttp_request_new(nullptr, nullptr));
     }
 
@@ -194,4 +195,5 @@ public:
     }
 };
 
+} // namespace http
 } // namespace e4pp
