@@ -5,8 +5,8 @@
 namespace e4pp {
 namespace http {
 
-using evhttp_flags = detail::ev_mask_flag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE>;
-constexpr detail::ev_flag_tag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE> lingering_close{};
+using evhttp_flags = e4pp::detail::ev_mask_flag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE>;
+constexpr e4pp::detail::ev_flag_tag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE> lingering_close{};
 
 class server
     : public vhost
@@ -28,7 +28,7 @@ public:
     void bind_socket(const char *address, ev_uint16_t port)
     {
         assert(address);
-        detail::check_result("evhttp_bind_socket",
+        e4pp::detail::check_result("evhttp_bind_socket",
             evhttp_bind_socket(assert_handle(), address, port));
     }
 
@@ -72,7 +72,7 @@ public:
 
     void set_flags(evhttp_flags f)
     {
-        detail::check_result("evhttp_set_flags",
+        e4pp::detail::check_result("evhttp_set_flags",
             evhttp_set_flags(assert_handle(), f));
     }
 };

@@ -8,21 +8,21 @@ namespace http {
 
 using http_handle_type = evhttp*;
 
-using cmd_type = detail::ev_mask_flag<evhttp_cmd_type, EVHTTP_REQ_GET|EVHTTP_REQ_POST|
+using cmd_type = e4pp::detail::ev_mask_flag<evhttp_cmd_type, EVHTTP_REQ_GET|EVHTTP_REQ_POST|
     EVHTTP_REQ_HEAD|EVHTTP_REQ_PUT|EVHTTP_REQ_DELETE|EVHTTP_REQ_OPTIONS|
     EVHTTP_REQ_TRACE|EVHTTP_REQ_CONNECT|EVHTTP_REQ_PATCH>;
 
 namespace method {
 
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_GET> get{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_POST> post{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_HEAD> head{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PUT> put{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_DELETE> del{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_OPTIONS> options{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_TRACE> trace{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_CONNECT> connect{};
-constexpr detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PATCH> patch{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_GET> get{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_POST> post{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_HEAD> head{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PUT> put{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_DELETE> del{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_OPTIONS> options{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_TRACE> trace{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_CONNECT> connect{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PATCH> patch{};
 
 } // namespace method
 
@@ -73,7 +73,7 @@ public:
     }
 
     explicit vhost(const queue& queue)
-        : vhost{detail::check_pointer("evhttp_new", 
+        : vhost{e4pp::detail::check_pointer("evhttp_new", 
             evhttp_new(queue))}
     {   }
 
@@ -85,7 +85,7 @@ public:
 
     void create(const queue& queue)
     {
-        handle_.reset(detail::check_pointer("evhttp_new", 
+        handle_.reset(e4pp::detail::check_pointer("evhttp_new", 
             evhttp_new(queue)));
     }
 
@@ -112,7 +112,7 @@ public:
 
     void add_virtual_host(vhost& other, const char *pattern)
     {
-        detail::check_result("evhttp_add_virtual_host",
+        e4pp::detail::check_result("evhttp_add_virtual_host",
             evhttp_add_virtual_host(assert_handle(), pattern, other));
         other.set_parent(this);
     }
@@ -129,14 +129,14 @@ public:
     void add_server_alias(const char *alias)
     {
         assert(alias);
-        detail::check_result("evhttp_add_server_alias",
+        e4pp::detail::check_result("evhttp_add_server_alias",
             evhttp_add_server_alias(assert_handle(), alias));
     }
 
     void remove_server_alias(const char *alias)
     {
         assert(alias);
-        detail::check_result("evhttp_add_server_alias",
+        e4pp::detail::check_result("evhttp_add_server_alias",
             evhttp_remove_server_alias(assert_handle(), alias));
     }
 };
