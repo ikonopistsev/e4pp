@@ -45,7 +45,7 @@ public:
     using handle_type = config_handle_type;
 
 private:
-    struct deallocate final
+    struct deallocate
     {
         void operator()(handle_type ptr) noexcept 
         { 
@@ -65,7 +65,6 @@ public:
     {
         set_flag(flag);
     }
-
 
     explicit config(ev_feature f)
     {

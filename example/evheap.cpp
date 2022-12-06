@@ -187,14 +187,16 @@ int run()
         evutil_closesocket(fd); 
     };
 
+
+    //    Recognized formats are:
+    //    - [IPv6Address]:port
+    //    - [IPv6Address]
+    //    - IPv6Address
+    //    - IPv4Address:port
+    //    - IPv4Address
+
     sockaddr_storage sa{};
     auto slen = int{sizeof(sa)};
-//    Recognized formats are:
-//    - [IPv6Address]:port
-//    - [IPv6Address]
-//    - IPv6Address
-//    - IPv4Address:port
-//    - IPv4Address
     evutil_parse_sockaddr_port("[::1]:32987",
         reinterpret_cast<sockaddr*>(&sa), &slen);
 
@@ -250,7 +252,7 @@ int main()
     // make output threadsafe
     // replace util::stdoutput
     e4pp::util::stdoutput = 
-        [&, output = e4pp::util::stdoutput](std::ostream& os)->std::ostream& {
+        [output = e4pp::util::stdoutput](std::ostream& os) -> std::ostream& {
             static std::mutex mutex{};
             std::lock_guard<std::mutex> l{mutex};
             return output(os);

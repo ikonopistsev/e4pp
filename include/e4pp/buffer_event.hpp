@@ -30,7 +30,7 @@ public:
     using handle_type = buffer_event_handle_type;    
 
 private:
-    struct deallocate final
+    struct deallocate
     {
         void operator()(handle_type ptr) noexcept 
         { 

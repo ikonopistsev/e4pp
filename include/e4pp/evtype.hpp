@@ -23,7 +23,7 @@ public:
     using handle_type = event_handle_type;
 
 private:
-    struct deallocate final
+    struct deallocate
     {
         void operator()(handle_type ptr) noexcept 
         { 

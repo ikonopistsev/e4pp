@@ -5,7 +5,6 @@
 #include "e4pp/query.hpp"
 // https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/signal?view=msvc-140
 #include <signal.h>
-#include <experimental/array>
 #ifdef _WIN32
 namespace {
 
@@ -76,18 +75,28 @@ int main()
         srv.bind_socket(bind_addr, bind_port);
         srv.set_default_content_type("application/json");
         srv.set_allowed_methods(e4pp::http::method::post);
-        srv.set_timeout(std::chrono::seconds{3});
+        srv.set_timeout(std::chrono::seconds{80});
         srv.set_flags(e4pp::http::lingering_close);
-        evhttp_set_cb(localhost, "/123", [] (evhttp_request *req, void *) {
-            e4pp::buffer b;
-            b.append("{\"code\":200,\"message\":\"ok\"}"sv);
-            evhttp_send_reply(req, 200, "ok", b);
-        }, nullptr);
+        evhttp_set_cb(localhost, "/123", [](evhttp_request *req, void* q) {
+            cout() << "reply_start"sv << std::endl;
+            evhttp_send_reply_start(req, HTTP_OK, "ok");
+            auto& queue = *reinterpret_cast<e4pp::queue*>(q);
+            queue.once(std::chrono::seconds{1}, [&, req]{
+                e4pp::buffer b;
+                b.append("{\"code\":200,\"message\":\"ok\"}"sv);
+                cout() << "reply_chunk"sv << std::endl;
+                evhttp_send_reply_chunk(req, b);
+                queue.once(std::chrono::seconds{1}, [&, req]{
+                    cout() << "reply_end"sv << std::endl;
+                    evhttp_send_reply_end(req);
+                });
+            });
+        }, &queue);
 
         // test: curl -v http://localhost:27321/123
         // http post 1 byte per sec
         // curl -v http://localhost:27321/123 -d '1234567890' --limit-rate 1
-        queue.dispatch(std::chrono::seconds{10});
+        queue.dispatch(std::chrono::seconds{80});
 
         trace([]{
             return "bye"sv;

@@ -25,7 +25,7 @@ public:
     using handle_type = dns_handle_type;
 
 private:
-    struct deallocate final
+    struct deallocate
     {
         void operator()(handle_type ptr) noexcept 
         { 
