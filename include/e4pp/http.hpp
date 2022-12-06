@@ -5,8 +5,11 @@
 namespace e4pp {
 namespace http {
 
-using evhttp_flags = e4pp::detail::ev_mask_flag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE>;
-constexpr e4pp::detail::ev_flag_tag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE> lingering_close{};
+using evhttp_flags = e4pp::detail::ev_mask_flag<evhttp,
+    EVHTTP_SERVER_LINGERING_CLOSE>;
+
+constexpr e4pp::detail::ev_flag_tag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE>
+    lingering_close{};
 
 class server
     : public vhost

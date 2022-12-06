@@ -45,14 +45,14 @@ template<class, int>
 struct ev_flag_tag final
 {   };
 
-template<class T, int Mask>
+template<class Tag, int Mask>
 class ev_mask_flag final
 {
     int val_{};
 
 public:
     template<int Val>
-    constexpr ev_mask_flag(ev_flag_tag<T, Val>) noexcept
+    constexpr ev_mask_flag(ev_flag_tag<Tag, Val>) noexcept
         : val_{Val}
     {   
         static_assert((Mask & Val) == Val);
@@ -64,10 +64,11 @@ public:
     }
 };
 
-template<class T, int V1, int V2>
-constexpr ev_flag_tag<T, V1|V2> operator|(ev_flag_tag<T, V1>, ev_flag_tag<T, V2>) noexcept
+template<class Tag, int V1, int V2>
+constexpr ev_flag_tag<Tag, V1|V2> operator|(ev_flag_tag<Tag, V1>,
+                                            ev_flag_tag<Tag, V2>) noexcept
 {
-    return ev_flag_tag<T, V1|V2>();
+    return ev_flag_tag<Tag, V1|V2>();
 }
 
 static inline int check_result(const char* what, int rc)

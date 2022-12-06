@@ -2,8 +2,10 @@
 #include "e4pp/http.hpp"
 #include "e4pp/util.hpp"
 #include "e4pp/thread.hpp"
+#include "e4pp/query.hpp"
 // https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/signal?view=msvc-140
 #include <signal.h>
+#include <experimental/array>
 #ifdef _WIN32
 namespace {
 
@@ -43,6 +45,16 @@ int main()
         e4pp::use_threads();
         e4pp::config cfg{e4pp::ev_base_startup_iocp};
 #endif // _WIN32
+
+        e4pp::query q{"key1=val1&key2=val2&key3=val3", {
+            { "key1"sv, [&](auto,auto val) {
+                  cout() << val << std::endl;
+            }},
+            { "key2"sv, [&](auto,auto val) {
+                  cout() << val << std::endl;
+            }}
+        }};
+
         e4pp::queue queue{cfg};
         auto f = [&](auto, auto){
             queue.loop_break();

@@ -7,6 +7,7 @@ namespace e4pp {
 
 using ev_flag = detail::ev_mask_flag<event, EV_TIMEOUT|EV_READ|EV_WRITE|
     EV_SIGNAL|EV_PERSIST|EV_ET|EV_FINALIZE|EV_CLOSED>;
+
 constexpr detail::ev_flag_tag<event, EV_TIMEOUT> ev_timeout{};
 constexpr detail::ev_flag_tag<event, EV_READ> ev_read{};
 constexpr detail::ev_flag_tag<event, EV_WRITE> ev_write{};

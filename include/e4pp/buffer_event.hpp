@@ -14,10 +14,15 @@ using buffer_event_handle_type = bufferevent*;
 
 using bev_flag = detail::ev_mask_flag<bufferevent, BEV_OPT_CLOSE_ON_FREE|
     BEV_OPT_THREADSAFE|BEV_OPT_DEFER_CALLBACKS|BEV_OPT_UNLOCK_CALLBACKS>;
-constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_CLOSE_ON_FREE> bev_close_on_free{};
-constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_THREADSAFE> bev_threadsafe{};
-constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_DEFER_CALLBACKS> bev_defer_callbacks{};
-constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_UNLOCK_CALLBACKS> bev_unlock_callbacks{};
+
+constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_CLOSE_ON_FREE>
+    bev_close_on_free{};
+constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_THREADSAFE>
+    bev_threadsafe{};
+constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_DEFER_CALLBACKS>
+    bev_defer_callbacks{};
+constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_UNLOCK_CALLBACKS>
+    bev_unlock_callbacks{};
 
 class buffer_event
 {

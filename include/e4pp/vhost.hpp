@@ -8,9 +8,10 @@ namespace http {
 
 using http_handle_type = evhttp*;
 
-using cmd_type = e4pp::detail::ev_mask_flag<evhttp_cmd_type, EVHTTP_REQ_GET|EVHTTP_REQ_POST|
-    EVHTTP_REQ_HEAD|EVHTTP_REQ_PUT|EVHTTP_REQ_DELETE|EVHTTP_REQ_OPTIONS|
-    EVHTTP_REQ_TRACE|EVHTTP_REQ_CONNECT|EVHTTP_REQ_PATCH>;
+using cmd_type = e4pp::detail::ev_mask_flag<evhttp_cmd_type,
+    EVHTTP_REQ_GET|EVHTTP_REQ_POST|EVHTTP_REQ_HEAD|EVHTTP_REQ_PUT|
+    EVHTTP_REQ_DELETE|EVHTTP_REQ_OPTIONS|EVHTTP_REQ_TRACE|
+    EVHTTP_REQ_CONNECT|EVHTTP_REQ_PATCH>;
 
 namespace method {
 
@@ -19,9 +20,11 @@ constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_POST> post{};
 constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_HEAD> head{};
 constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PUT> put{};
 constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_DELETE> del{};
-constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_OPTIONS> options{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type,
+    EVHTTP_REQ_OPTIONS> options{};
 constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_TRACE> trace{};
-constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_CONNECT> connect{};
+constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type,
+    EVHTTP_REQ_CONNECT> connect{};
 constexpr e4pp::detail::ev_flag_tag<evhttp_cmd_type, EVHTTP_REQ_PATCH> patch{};
 
 } // namespace method

@@ -250,7 +250,7 @@ int main()
     // make output threadsafe
     // replace util::stdoutput
     e4pp::util::stdoutput = 
-        [&, output = e4pp::util::stdoutput] (std::ostream& os) -> std::ostream& {
+        [&, output = e4pp::util::stdoutput](std::ostream& os)->std::ostream& {
             static std::mutex mutex{};
             std::lock_guard<std::mutex> l{mutex};
             return output(os);

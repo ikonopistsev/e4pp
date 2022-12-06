@@ -23,6 +23,7 @@ struct priority final
 
 using evloop_flag = detail::ev_mask_flag<event_base, EVLOOP_ONCE|
     EVLOOP_NONBLOCK|EVLOOP_NO_EXIT_ON_EMPTY>;
+
 constexpr detail::ev_flag_tag<event_base, EVLOOP_ONCE> evloop_once{};
 constexpr detail::ev_flag_tag<event_base, EVLOOP_NONBLOCK> evloop_nonblock{};
 constexpr detail::ev_flag_tag<event_base, EVLOOP_NO_EXIT_ON_EMPTY> 

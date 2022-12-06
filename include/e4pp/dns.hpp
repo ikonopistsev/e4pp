@@ -7,13 +7,22 @@ namespace e4pp {
 
 using dns_handle_type = evdns_base*;
 
+using dns_flag = detail::ev_mask_flag<evdns_base,
+    EVDNS_BASE_INITIALIZE_NAMESERVERS|EVDNS_BASE_DISABLE_WHEN_INACTIVE|
+    EVDNS_BASE_NAMESERVERS_NO_DEFAULT>;
+
+constexpr detail::ev_flag_tag<evdns_base, EVDNS_BASE_INITIALIZE_NAMESERVERS>
+    dns_initialize_nameservers{};
+constexpr detail::ev_flag_tag<evdns_base, EVDNS_BASE_DISABLE_WHEN_INACTIVE>
+    dns_disable_when_inactive{};
+constexpr detail::ev_flag_tag<evdns_base, EVDNS_BASE_NAMESERVERS_NO_DEFAULT>
+    dns_nameservers_no_default{};
+constexpr auto dns_default{dns_initialize_nameservers|dns_disable_when_inactive};
+
 class dns final
 {
 public:
     using handle_type = dns_handle_type;
-    constexpr static int def_opt =
-        { EVDNS_BASE_INITIALIZE_NAMESERVERS|
-            EVDNS_BASE_DISABLE_WHEN_INACTIVE };
 
 private:
     struct deallocate final
@@ -27,7 +36,6 @@ private:
     ptr_type handle_{};
 
 public:
-    dns() = default;
     dns(dns&&) = default;
     dns& operator=(dns&&) = default;
 
@@ -38,7 +46,7 @@ public:
         randomize_case("0");
     }
 
-    dns(queue_handle_type queue, int opt = def_opt) 
+    explicit dns(queue_handle_type queue, dns_flag opt = dns_default)
         : dns{detail::check_pointer("evdns_base_new", 
             evdns_base_new(queue, opt))}
     {   }
