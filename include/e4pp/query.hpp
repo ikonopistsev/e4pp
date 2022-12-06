@@ -25,7 +25,16 @@ public:
         parse(std::move(val));
     }
 
+    explicit query(std::string_view query_str,
+        std::initializer_list<pair_type> val)
+        : query{query_str.empty() ? "": query_str.data(), val}
+    {   }
+
     explicit query(const char *query_str)
+        : query{query_str, {}}
+    {   }
+
+    explicit query(std::string_view query_str)
         : query{query_str, {}}
     {   }
 

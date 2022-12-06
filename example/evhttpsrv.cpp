@@ -46,11 +46,11 @@ int main()
 #endif // _WIN32
 
         e4pp::query q{"key1=val1&key2=val2&key3=val3", {
-            { "key1"sv, [&](auto,auto val) {
+            { "key1"sv, [&](auto, auto val) {
                   cout() << val << std::endl;
             }},
-            { "key2"sv, [&](auto,auto val) {
-                  cout() << val << std::endl;
+            { "key2"sv, [&](auto key, auto val) {
+                  cout() << key << ':' << val << std::endl;
             }}
         }};
 
