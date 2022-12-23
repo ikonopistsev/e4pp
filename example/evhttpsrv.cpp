@@ -5,6 +5,9 @@
 #include "e4pp/query.hpp"
 // https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/signal?view=msvc-140
 #include <signal.h>
+#include <list>
+#include <vector>
+#include <algorithm>
 #ifdef _WIN32
 namespace {
 

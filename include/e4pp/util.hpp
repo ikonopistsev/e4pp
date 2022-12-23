@@ -13,13 +13,14 @@ static auto& stdcerr = std::cerr;
 static auto& stdcout = std::cout;
 
 using output_type = std::function<std::ostream&(std::ostream&)>;
+
 static output_type stdoutput = [](std::ostream& os) noexcept -> std::ostream& {
-    namespace ch = std::chrono;
-    auto n = ch::system_clock::now();
+    namespace c = std::chrono;
+    auto n = c::system_clock::now();
     auto d = n.time_since_epoch();
-    auto ms = ch::duration_cast<ch::milliseconds>(d).count() % 1000;
+    auto ms = c::duration_cast<c::milliseconds>(d).count() % 1000;
     auto t = static_cast<std::time_t>(
-        ch::duration_cast<ch::seconds>(d).count());
+        c::duration_cast<c::seconds>(d).count());
     return os << std::put_time(std::gmtime(&t), "%FT%T")
         << '.' << std::setfill('0') << std::setw(3) << ms << 'Z' << ' ';
 };

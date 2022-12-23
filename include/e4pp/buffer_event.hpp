@@ -27,7 +27,7 @@ constexpr detail::ev_flag_tag<bufferevent, BEV_OPT_UNLOCK_CALLBACKS>
 class buffer_event
 {
 public:
-    using handle_type = buffer_event_handle_type;    
+    using handle_type = buffer_event_handle_type;
 
 private:
     struct deallocate
@@ -39,26 +39,19 @@ private:
     };
     std::unique_ptr<bufferevent, deallocate> handle_{};
 
-    handle_type assert_handle() const noexcept
-    {
-        auto h = handle();
-        assert(h);
-        return h;
-    }
-
     auto output_handle() const noexcept
     {
-        return bufferevent_get_output(assert_handle());
+        return bufferevent_get_output(assert_handle(handle()));
     }
 
     auto input_handle() const noexcept
     {
-        return bufferevent_get_input(assert_handle());
+        return bufferevent_get_input(assert_handle(handle()));
     }
 
     queue_handle_type queue_handle() const noexcept
     {
-        return bufferevent_get_base(assert_handle());
+        return bufferevent_get_base(assert_handle(handle()));
     }
 
 public:
@@ -121,14 +114,14 @@ public:
 
     int get_dns_error() const noexcept
     {
-        return bufferevent_socket_get_dns_error(assert_handle());
+        return bufferevent_socket_get_dns_error(assert_handle(handle()));
     }
 
     void connect(const sockaddr* sa, ev_socklen_t len)
     {
         assert(sa);
         detail::check_result("bufferevent_socket_connect",
-            bufferevent_socket_connect(assert_handle(),
+            bufferevent_socket_connect(assert_handle(handle()),
                 const_cast<sockaddr*>(sa), static_cast<int>(len)));
     }
 
@@ -137,7 +130,7 @@ public:
     {
         assert(dns);
         detail::check_result("bufferevent_socket_connect_hostname",
-            bufferevent_socket_connect_hostname(assert_handle(), dns,
+            bufferevent_socket_connect_hostname(assert_handle(handle()), dns,
                 af, hostname.c_str(), port));
     }
 
@@ -168,45 +161,45 @@ public:
 
     evutil_socket_t fd() const noexcept
     {
-        return bufferevent_getfd(assert_handle());
+        return bufferevent_getfd(assert_handle(handle()));
     }
 
     void enable(short event)
     {
         detail::check_result("bufferevent_enable",
-            bufferevent_enable(assert_handle(), event));
+            bufferevent_enable(e4pp::assert_handle(handle()), event));
     }
 
     void disable(short event)
     {
         detail::check_result("bufferevent_disable",
-            bufferevent_disable(assert_handle(), event));
+            bufferevent_disable(assert_handle(handle()), event));
     }
 
     void set_watermark(short events, std::size_t lowmark,
                        std::size_t highmark) noexcept
     {
-        bufferevent_setwatermark(assert_handle(), events, lowmark, highmark);
+        bufferevent_setwatermark(assert_handle(handle()), events, lowmark, highmark);
     }
 
     ev_ssize_t get_max_to_read() const noexcept
     {
-        return bufferevent_get_max_to_read(assert_handle());
+        return bufferevent_get_max_to_read(assert_handle(handle()));
     }
 
     ev_ssize_t get_max_to_write() const noexcept
     {
-        return bufferevent_get_max_to_write(assert_handle());
+        return bufferevent_get_max_to_write(assert_handle(handle()));
     }
 
     void lock() const noexcept
     {
-        bufferevent_lock(assert_handle());
+        bufferevent_lock(assert_handle(handle()));
     }
 
     void unlock() const noexcept
     {
-        bufferevent_unlock(assert_handle());
+        bufferevent_unlock(assert_handle(handle()));
     }
 
     template<typename F>
@@ -219,22 +212,34 @@ public:
     void write(const void *data, std::size_t size)
     {
         detail::check_result("bufferevent_write",
-            bufferevent_write(assert_handle(), data, size));
+            bufferevent_write(assert_handle(handle()), data, size));
     }
 
     template<class Ref>
     void write(basic_buffer<Ref> buf)
     {
         detail::check_result("bufferevent_write_buffer",
-            bufferevent_write_buffer(assert_handle(), buf));
+            bufferevent_write_buffer(assert_handle(handle()), buf));
     }
 
-    buffer read()
+    auto read()
     {
         buffer result;
         detail::check_result("bufferevent_read_buffer",
-            bufferevent_read_buffer(assert_handle(), result));
+            bufferevent_read_buffer(assert_handle(handle()), result));
         return result;
+    }
+
+    auto input_buffer() noexcept
+    {
+        return buffer_ref{detail::check_pointer("bufferevent_get_input",
+            bufferevent_get_input(assert_handle(handle())))};
+    }
+
+    auto output_buffer() noexcept
+    {
+        return buffer_ref{detail::check_pointer("bufferevent_get_output",
+            bufferevent_get_output(assert_handle(handle())))};
     }
 
     // assign a bufferevent to a specific event_base.
@@ -243,24 +248,24 @@ public:
     {
         assert(queue);
         detail::check_result("bufferevent_base_set",
-            bufferevent_base_set(queue, assert_handle()));
+            bufferevent_base_set(queue, assert_handle(handle())));
     }
 
     void set(evutil_socket_t fd)
     {
         detail::check_result("bufferevent_setfd",
-            bufferevent_setfd(assert_handle(), fd));
+            bufferevent_setfd(assert_handle(handle()), fd));
     }
 
     void set(bufferevent_data_cb rdfn, bufferevent_data_cb wrfn,
         bufferevent_event_cb evfn, void *arg) noexcept
     {
-        bufferevent_setcb(assert_handle(), rdfn, wrfn, evfn, arg);
+        bufferevent_setcb(assert_handle(handle()), rdfn, wrfn, evfn, arg);
     }
 
     void set_timeout(timeval *timeout_read, timeval *timeout_write)
     {
-        bufferevent_set_timeouts(assert_handle(), timeout_read, timeout_write);
+        bufferevent_set_timeouts(assert_handle(handle()), timeout_read, timeout_write);
     }
 };
 

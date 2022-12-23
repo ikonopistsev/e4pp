@@ -97,6 +97,26 @@ public:
         return (rc) ? sv{rc} : sv{};
     }
 
+    std::string full_path() const noexcept 
+    {
+        auto rc = std::string{path()};
+        if (rc.empty())
+            return rc;
+        auto q = query();
+        if (!q.empty())
+        {
+            rc += '&';
+            rc += q;
+        }           
+        auto f = fragment();
+        if (!f.empty())
+        {
+            rc += '#';
+            rc += f;
+        }
+        return rc;
+    }
+
     std::string_view rpath() const noexcept
     {
         auto p = path();

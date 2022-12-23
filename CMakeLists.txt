@@ -15,9 +15,11 @@ target_include_directories(e4pp INTERFACE
 # add_library(e4pp::e4pp ALIAS e4pp)
 
 option(E4PP_BUILD_EXAMPLES "build examples" OFF)
+option(E4PP_STATIC_LIBEVENT "e4pp static libevent" OFF)
 
 if (E4PP_BUILD_EXAMPLES)
-    if (WIN32)
+    add_subdirectory(ext/wslay)
+    if (E4PP_STATIC_LIBEVENT)
         set(EVENT__LIBRARY_TYPE "STATIC" CACHE STRING "libevent static")
         set(EVENT__DISABLE_OPENSSL ON CACHE BOOL "libevent no openssl")
         set(EVENT__DISABLE_DEBUG_MODE ON CACHE BOOL "libevent no debug")
