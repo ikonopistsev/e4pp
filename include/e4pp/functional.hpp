@@ -34,7 +34,7 @@ struct generic_fn final
     using self_type = T;
 
     fn_type fn_{};
-    T& self_;
+    T& self_; 
 
     void call(evutil_socket_t fd, event_flag ef) noexcept
     {
@@ -100,7 +100,7 @@ struct event_fn
 };
 
 template<class T>
-constexpr auto proxy_call(timer_fn<T>& fn)
+auto proxy_call(timer_fn<T>& fn)
 {
     return std::make_pair(&fn,
         [](evutil_socket_t, event_flag, void *arg){
@@ -114,7 +114,7 @@ constexpr auto proxy_call(timer_fn<T>& fn)
 }
 
 template<class T>
-constexpr auto proxy_call(generic_fn<T>& fn)
+auto proxy_call(generic_fn<T>& fn)
 {
     return std::make_pair(&fn,
         [](evutil_socket_t fd, event_flag ef, void *arg){
@@ -128,7 +128,7 @@ constexpr auto proxy_call(generic_fn<T>& fn)
 }
 
 template<class T>
-constexpr auto proxy_call(event_fn<T>& fn)
+auto proxy_call(event_fn<T>& fn)
 {
     return std::make_tuple(&fn,
         [](struct bufferevent*, short what, void *arg){
@@ -159,7 +159,7 @@ constexpr auto proxy_call(event_fn<T>& fn)
 }
 
 template<class T>
-constexpr auto proxy_call(acceptor_fn<T>& fn)
+auto proxy_call_accept(acceptor_fn<T>& fn)
 {
     return std::make_pair(&fn,
         [](evconnlistener*, evutil_socket_t fd, 
@@ -178,7 +178,7 @@ using generic_fun =
     std::function<void(evutil_socket_t fd, event_flag ef)>;
 using acceptor_fun = std::function<void(evutil_socket_t, sockaddr*, int)>;
 
-constexpr static inline auto proxy_call(timer_fun& fn)
+inline auto proxy_call(timer_fun& fn)
 {
     return std::make_pair(&fn,
         [](evutil_socket_t, event_flag, void *arg){
@@ -192,7 +192,7 @@ constexpr static inline auto proxy_call(timer_fun& fn)
         });
 }
 
-static inline auto proxy_call(timer_fun&& fn)
+inline auto proxy_call(timer_fun&& fn)
 {
     return std::make_pair(new timer_fun{std::move(fn)},
         [](evutil_socket_t, event_flag, void *arg){
@@ -207,7 +207,7 @@ static inline auto proxy_call(timer_fun&& fn)
         });
 }
  
-constexpr static inline auto proxy_call(generic_fun& fn)
+inline auto proxy_call(generic_fun& fn)
 {
     return std::make_pair(&fn,
         [](evutil_socket_t fd, event_flag ef, void *arg){
@@ -221,7 +221,7 @@ constexpr static inline auto proxy_call(generic_fun& fn)
         });
 }
 
-static inline auto proxy_call(generic_fun&& fn)
+inline auto proxy_call(generic_fun&& fn)
 {
     return std::make_pair(new generic_fun{std::move(fn)},
         [](evutil_socket_t fd, event_flag ef, void *arg){
@@ -236,13 +236,14 @@ static inline auto proxy_call(generic_fun&& fn)
         });
 }
 
-constexpr static inline auto proxy_call(acceptor_fun& fn)
+template<class F>
+auto proxy_call_accept(F& fn)
 {
     return std::make_pair(&fn,
         [](evconnlistener*, evutil_socket_t fd, 
             sockaddr* sockaddr, int socklen, void* arg){
             assert(arg);
-            auto fn = static_cast<acceptor_fun*>(arg);
+            auto fn = static_cast<F*>(arg);
             try {
                 (*fn)(fd, sockaddr, socklen);
             }

@@ -18,7 +18,7 @@ option(E4PP_BUILD_EXAMPLES "build examples" OFF)
 option(E4PP_STATIC_LIBEVENT "e4pp static libevent" OFF)
 
 if (E4PP_BUILD_EXAMPLES)
-    add_subdirectory(ext/wslay)
+    #add_subdirectory(ext/wslay)
     if (E4PP_STATIC_LIBEVENT)
         set(EVENT__LIBRARY_TYPE "STATIC" CACHE STRING "libevent static")
         set(EVENT__DISABLE_OPENSSL ON CACHE BOOL "libevent no openssl")

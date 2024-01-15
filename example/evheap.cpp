@@ -43,6 +43,18 @@ namespace {
 using namespace std::literals;
 using namespace e4pp::util;
 
+e4pp::util::output u;
+
+inline std::ostream& cerr() noexcept
+{
+    return u.cerr();
+}
+
+inline std::ostream& cout() noexcept
+{
+    return u.cout();
+}
+
 class proxy_test
 {
     e4pp::queue& queue_;
@@ -251,12 +263,12 @@ int main()
     e4pp::use_threads();
     // make output threadsafe
     // replace util::stdoutput
-    e4pp::util::stdoutput = 
-        [output = e4pp::util::stdoutput](std::ostream& os) -> std::ostream& {
+    u.stream = [output = e4pp::util::detail::std_output()] 
+        (std::ostream& os) -> auto& {
             static std::mutex mutex{};
             std::lock_guard<std::mutex> l{mutex};
             return output(os);
-    };
+    }; 
 
     run();
 

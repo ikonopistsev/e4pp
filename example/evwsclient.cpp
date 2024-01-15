@@ -207,7 +207,7 @@ struct websocket {
         auto accept_header = create_accept_key(client_key_);
         if (accept_header == evhttp_find_header(req->input_headers, "Sec-WebSocket-Accept")) {
             wsbev_.setup(evhttp_connection_get_bufferevent(conn_.get()));
-            write("{\"login\":\"cylive\",\"password_hash\":\"54a79007858bbcdffd97ad4cf3d4f24645ebd467\",\"symbols\":[]}"sv);
+            write("{\"login\":\"user123\",\"password_hash\":\"54a79007858bbcdffd97ad4cf3d4f24645ebd467\",\"symbols\":[]}"sv);
         } else {
             e4pp::util::cout() << "ws OFF" << std::endl;
         }
@@ -244,7 +244,7 @@ struct websocket {
         client_key_ = create_client_key();
     
         evhttp_add_header(req->output_headers, "Host", host.data());
-        evhttp_add_header(req->output_headers, "Origin", "http://b2pm.bt02-dev.rsitedirect.com");
+        evhttp_add_header(req->output_headers, "Origin", "http://mywebsocket.host.com");
         evhttp_add_header(req->output_headers, "Sec-WebSocket-Version", "13");
         evhttp_add_header(req->output_headers, "Sec-WebSocket-Protocol", protocol.c_str());
         evhttp_add_header(req->output_headers, "Sec-WebSocket-Key", client_key_.c_str());
@@ -277,7 +277,7 @@ int main()
         sterm.add();
 
         websocket ws{queue};
-        ws.open("ws://b2pm.bt02-dev.rsitedirect.com/prime-dev/?u=test.client#mytest", 
+        ws.open("ws://mywebsocket.host.com/dev/?u=test.client#mytest", 
             "SnapshotFullRefresh2", [&](wslay_opcode opcode, 
                 const char *ptr, std::size_t len) {
                 if (opcode == WSLAY_TEXT_FRAME) {
