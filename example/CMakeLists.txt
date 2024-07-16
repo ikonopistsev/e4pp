@@ -13,7 +13,6 @@ add_executable(evhttpsrv evhttpsrv.cpp)
 if (WIN32)
   target_compile_definitions(evheap PRIVATE -D_CRT_SECURE_NO_WARNINGS -DNOMINMAX)
   target_compile_definitions(evhttpsrv PRIVATE -D_CRT_SECURE_NO_WARNINGS -DNOMINMAX)
-  target_compile_definitions(evwsclient PRIVATE -D_CRT_SECURE_NO_WARNINGS -DNOMINMAX)
 endif()
 
 if (E4PP_STATIC_LIBEVENT)
