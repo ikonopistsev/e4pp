@@ -71,7 +71,7 @@ public:
     template<class F>
     listener(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
         F& fn, int backlog = 1024, lev_flag fl = lev_default)
-        : listener{queue, sa, salen, proxy_call(fn), backlog, fl}
+        : listener{queue, sa, salen, proxy_call_accept(fn), backlog, fl}
     {   }  
 
     void listen(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
@@ -93,7 +93,7 @@ public:
     void listen(queue_handle_type queue, const sockaddr *sa, ev_socklen_t salen,
         F& fn, int backlog = 1024, lev_flag fl = lev_default)
     {   
-        listen(queue, sa, salen, proxy_call(fn), backlog, fl);
+        listen(queue, sa, salen, proxy_call_accept(fn), backlog, fl);
     }  
 
     void swap(listener& other) noexcept

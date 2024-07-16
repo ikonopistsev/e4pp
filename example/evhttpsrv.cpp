@@ -8,7 +8,9 @@
 #include <list>
 #include <vector>
 #include <algorithm>
-#include <experimental/array>
+
+namespace {
+
 #ifdef _WIN32
 namespace {
 
@@ -28,12 +30,37 @@ struct wsa
     }
 };
 
-}
 #endif // _WIN32
+
+e4pp::util::output u;
+
+inline std::ostream& cerr() noexcept
+{
+    return u.cerr();
+}
+
+inline std::ostream& cout() noexcept
+{
+    return u.cout();
+}
+
+template<class F>
+void do_trace(F fn) noexcept
+{
+    u.do_trace(std::move(fn));
+}
+
+template<class F>
+void trace(F fn) noexcept
+{
+    u.trace(std::move(fn));
+}
+
+}
 
 int main()
 {
-    e4pp::util::verbose = true;
+    u.verbose = true;
 
     using namespace e4pp::util;
     using namespace std::literals;
@@ -60,7 +87,7 @@ int main()
             });
         e4pp::query q{"key1=val1111&key2=val2&key3=val33", val};
         q.parse(std::begin(val), std::end(val));
-
+        
         e4pp::queue queue{cfg};
         auto f = [&](auto, auto){
             queue.loop_break();
@@ -106,7 +133,7 @@ int main()
         queue.dispatch(std::chrono::seconds{80});
 
         trace([]{
-            cout() << "bye"sv << std::endl;
+            return "bye"sv;
         });
     }
     catch (const std::exception& e)
