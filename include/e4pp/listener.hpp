@@ -40,14 +40,14 @@ public:
     using handle_type = listener_handle_type;
 
 private:
-    struct deallocate
+    struct free_evconnlistener
     {
         void operator()(handle_type ptr) noexcept 
         { 
             evconnlistener_free(ptr); 
         }
     };
-    using ptr_type = std::unique_ptr<evconnlistener, deallocate>;
+    using ptr_type = std::unique_ptr<evconnlistener, free_evconnlistener>;
     ptr_type handle_{};
 
 public:
@@ -146,16 +146,14 @@ public:
 
     void enable()
     {
-        auto rc = evconnlistener_enable(assert_handle(handle()));
-        if (-1 == rc)
-            throw std::runtime_error("evconnlistener_enable");
+        detail::check_result("evconnlistener_enable", 
+            evconnlistener_enable(assert_handle(handle())));
     }
 
     void disable()
     {
-        auto rc = evconnlistener_disable(assert_handle(handle()));
-        if (-1 == rc)
-            throw std::runtime_error("evconnlistener_disable");
+        detail::check_result("evconnlistener_disable", 
+            evconnlistener_disable(assert_handle(handle())));
     }
 };
 

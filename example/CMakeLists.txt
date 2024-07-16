@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(evheap evheap.cpp)
 add_executable(evhttpsrv evhttpsrv.cpp)
-add_executable(evwsclient evwsclient.cpp)
 
 #target_include_directories(evwsclient PRIVATE "../ext/libevent/include")
 
@@ -24,5 +23,5 @@ if (E4PP_STATIC_LIBEVENT)
 else()
   target_link_libraries(evheap PRIVATE e4pp event_core event_extra event_pthreads)
   target_link_libraries(evhttpsrv PRIVATE e4pp event_core event_extra event_pthreads)
-  target_link_libraries(evwsclient PRIVATE e4pp event_core_static event_extra_static event_pthreads_static wslay)
+  target_link_libraries(evwsclient PRIVATE e4pp event_core event_extra event_pthreads wslay ssl crypto)
 endif()

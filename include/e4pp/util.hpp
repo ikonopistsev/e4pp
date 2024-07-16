@@ -9,57 +9,62 @@ namespace e4pp {
 namespace util {
 
 static bool verbose = false;
-static auto& stdcerr = std::cerr;
-static auto& stdcout = std::cout;
 
-using output_type = std::function<std::ostream&(std::ostream&)>;
+using stream_fn = std::function<std::ostream&()>;
 
-static output_type stdoutput = [](std::ostream& os) noexcept -> std::ostream& {
+static stream_fn stdcerr = []() noexcept -> std::ostream& {
+    return std::cerr;
+};
+static stream_fn stdcout = []() noexcept -> std::ostream& {
+    return std::cout;
+};
+
+using output_fn = std::function<std::ostream&(std::ostream&)>;
+
+static output_fn stdoutput = [](std::ostream& os) noexcept -> std::ostream& {
     namespace c = std::chrono;
     auto n = c::system_clock::now();
     auto d = n.time_since_epoch();
     auto ms = c::duration_cast<c::milliseconds>(d).count() % 1000;
     auto t = static_cast<std::time_t>(
         c::duration_cast<c::seconds>(d).count());
-    return os << std::put_time(std::gmtime(&t), "%FT%T")
-        << '.' << std::setfill('0') << std::setw(3) << ms << 'Z' << ' ';
+    return os << std::put_time(std::gmtime(&t), "%FT%T") << '.'
+        << static_cast<char>(((ms / 100) % 10) + '0')
+        << static_cast<char>(((ms / 10) % 10) + '0')
+        << static_cast<char>((ms % 10) + '0') << 'Z' << ' ';
 };
 
-std::ostream& endl2(std::ostream& os) noexcept
+auto& endl2(std::ostream& os) noexcept
 {
-    return os << std::endl << std::endl;
+    return std::endl(std::endl(os));
 }
 
-std::ostream& cerr() noexcept
+auto& cerr() noexcept
 {
-    return stdoutput(stdcerr);
+    return stdoutput(stdcerr());
 }
 
-std::ostream& cout() noexcept
+auto& cout() noexcept
 {
-    return stdoutput(stdcout);
-}
-
-template<class F>
-void do_trace(F fn) noexcept
-{
-    try
-    {
-        if (verbose)
-            fn();
-    }
-    catch (const std::exception& e)
-    {
-        cerr() << e.what() << std::endl;
-    }
+    return stdoutput(stdcout());
 }
 
 template<class F>
 void trace(F fn) noexcept
 {
-    do_trace([&]{
-        cout() << fn() << std::endl;
-    });
+    try
+    {
+        if (verbose) 
+            fn();
+    }
+    catch(const std::exception& e)
+    {
+        cerr() << e.what() << std::endl;
+    }
+    catch(...)
+    {
+        cerr() << "trace" << std::endl;
+    }
 }
 
 } // namespace util

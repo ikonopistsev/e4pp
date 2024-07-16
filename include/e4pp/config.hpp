@@ -45,14 +45,14 @@ public:
     using handle_type = config_handle_type;
 
 private:
-    struct deallocate
+    struct free_event_config
     {
         void operator()(handle_type ptr) noexcept 
         { 
             event_config_free(ptr); 
         };
     };
-    using ptr_type = std::unique_ptr<event_config, deallocate>;
+    using ptr_type = std::unique_ptr<event_config, free_event_config>;
     ptr_type handle_{detail::check_pointer("event_config_new", 
             event_config_new())};
 

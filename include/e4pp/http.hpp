@@ -1,6 +1,8 @@
 #pragma once
 
+#include "e4pp/uri.hpp"
 #include "e4pp/vhost.hpp"
+#include <event2/http_struct.h>
 
 namespace e4pp {
 namespace http {
@@ -8,8 +10,8 @@ namespace http {
 using evhttp_flags = e4pp::detail::ev_mask_flag<evhttp,
     EVHTTP_SERVER_LINGERING_CLOSE>;
 
-constexpr e4pp::detail::ev_flag_tag<evhttp, EVHTTP_SERVER_LINGERING_CLOSE>
-    lingering_close{};
+constexpr e4pp::detail::ev_flag_tag<evhttp, 
+    EVHTTP_SERVER_LINGERING_CLOSE> lingering_close{};
 
 class server
     : public vhost
@@ -21,11 +23,11 @@ public:
     virtual ~server() = default;
 
     explicit server(handle_type handle) noexcept
-        : vhost(handle)
+        : vhost{handle}
     {   }
 
     explicit server(const queue& queue)
-        : vhost(queue)
+        : vhost{queue}
     {   }
 
     void bind_socket(const char *address, ev_uint16_t port)
@@ -80,50 +82,163 @@ public:
     }
 };
 
-using request_handle_type = evhttp_request*;
+// using hreq = evhttp_request*;
 
-namespace detail {
+// namespace detail {
 
-struct req_ref_allocator final
+// struct req_ref_allocator final
+// {
+//     constexpr static inline hreq allocate() noexcept
+//     {
+//         return nullptr;
+//     }
+
+//     constexpr static inline void free(hreq) noexcept
+//     {   }
+// };
+
+// struct req_allocator final
+// {
+//     static auto allocate()
+//     {
+//         return e4pp::detail::check_pointer("evhttp_request_new",
+//             evhttp_request_new(nullptr, nullptr));
+//     }
+
+//     static void free(hreq ptr) noexcept
+//     {
+//         evhttp_request_free(ptr);
+//     }
+// };
+
+// } // detail
+
+// template<class A>
+// class basic_request;
+
+// using request_ref = basic_buffer<detail::req_ref_allocator>;
+// using request = basic_buffer<detail::req_allocator>;
+
+// template<class A>
+// class basic_request
+// {
+//     using this_type = basic_request<A>;
+
+// private:
+//     hreq hreq_{A::allocate()};
+
+//     auto assert_handle() const noexcept
+//     {
+//         auto h = handle();
+//         assert(h);
+//         return h;
+//     }
+
+// public:
+//     auto handle() const noexcept
+//     {
+//         return hreq_;
+//     }
+
+//     basic_request() = default;
+
+//     ~basic_request() noexcept
+//     {
+//         A::free(handle());
+//     }
+
+//     // only for ref
+//     // this delete copy ctor for buffer&
+//     basic_request(const basic_request& other) noexcept
+//         : handle_{other.handle()}
+//     {
+//         // copy only for refs
+//         static_assert(std::is_same<this_type, request_ref>::value);
+//     }
+
+//     // only for ref
+//     // this delete copy ctor for buffer&
+//     basic_request& operator=(const basic_request& other) noexcept
+//     {
+//         // copy only for refs
+//         static_assert(std::is_same<this_type, request_ref>::value);
+//         handle_ = other.handle();
+//         return *this;
+//     }
+
+//     basic_request(basic_request&& that) noexcept
+//     {
+//         std::swap(handle_, that.handle_);
+//     }
+
+//     basic_request& operator=(basic_request&& that) noexcept
+//     {
+//         std::swap(handle_, that.handle_);
+//         return *this;
+//     }
+
+//     explicit basic_request(hreq ptr) noexcept
+//         : handle_{ptr}
+//     {
+//         static_assert(std::is_same<this_type, request_ref>::value);
+//         assert(ptr);
+//     }
+
+//     explicit basic_request() noexcept
+//         : handle_{evhttp_request_new()}
+//     {
+//         static_assert(std::is_same<this_type, request>::value);
+//         assert(ptr);
+//     }
+
+
+//     explicit basic_request(hreq ptr) noexcept
+//         : handle_{ptr}
+//     {
+//         static_assert(std::is_same<this_type, request_ref>::value);
+//         assert(ptr);
+//     }
+
+// };
+
+using connection_handle_type = evhttp_connection*;
+
+class connection
 {
-    constexpr static inline request_handle_type allocate() noexcept
-    {
-        return nullptr;
-    }
-
-    constexpr static inline void free(request_handle_type) noexcept
-    {   }
-};
-
-struct req_allocator final
-{
-    static auto allocate()
-    {
-        return e4pp::detail::check_pointer("evhttp_request_new",
-            evhttp_request_new(nullptr, nullptr));
-    }
-
-    static void free(request_handle_type ptr) noexcept
-    {
-        evhttp_request_free(ptr);
-    }
-};
-
-} // detail
-
-template<class A>
-class basic_request;
-
-using request_ref = basic_buffer<detail::req_ref_allocator>;
-using request = basic_buffer<detail::req_allocator>;
-
-template<class A>
-class basic_request
-{
-    using this_type = basic_request<A>;
+public:
+    using handle_type = connection_handle_type;
 
 private:
-    request_handle_type handle_{A::allocate()};
+    struct free_evhttp_connection
+    {
+        void operator()(connection_handle_type h) noexcept 
+        { 
+            evhttp_connection_free(h); 
+        }
+    };
+
+    struct cleanup_ref
+    {
+        void operator()(connection_handle_type h) noexcept 
+        {   }
+    };
+
+    std::unique_ptr<evhttp_connection, free_evhttp_connection> handle_{};
+    //evhttp_connection_base_bufferevent_new();
+    // hz
+
+    // struct evhttp_connection *evhttp_connection_base_new(
+	//     struct event_base *base, struct evdns_base *dnsbase,
+	//     const char *address, ev_uint16_t port);
+
+    static inline auto new_connection(event_base *base, evdns_base *dns, 
+        const char *addr, ev_uint16_t port)
+    {
+        assert(base);
+        assert(addr);
+        return detail::check_pointer("evhttp_connection_base_new",
+            evhttp_connection_base_new(base, dns, addr, port));
+    }
 
     auto assert_handle() const noexcept
     {
@@ -133,68 +248,111 @@ private:
     }
 
 public:
-    auto handle() const noexcept
+    connection() = default;
+
+    connection(event_base *base, evdns_base *dns, 
+        const std::string& addr, ev_uint16_t port)
+        : handle_{new_connection(base, dns, addr.c_str(), port)}
+    {  }
+
+    void create(event_base *base, evdns_base *dns, 
+        const std::string& addr, ev_uint16_t port)
     {
-        return handle_;
+        handle_.reset(new_connection(base, dns, addr.c_str(), port));        
     }
 
-    operator evbufer_ptr() const noexcept
+    void create(event_base *base, const std::string& addr, ev_uint16_t port)
+    {
+        create(base, nullptr, addr, port);   
+    }
+
+    handle_type handle() const noexcept
+    {
+        return handle_.get();
+    }
+
+    operator handle_type() const noexcept
     {
         return handle();
     }
 
-    operator buffer_ref() const noexcept
+    operator bool() const noexcept
     {
-        return ref();
+        return nullptr != handle();
     }
 
-    request_ref ref() const noexcept
+    // ??? evhttp_connection_free_on_completion(struct evhttp_connection *evcon)s
+    void free_on_completion() 
     {
-        return request_ref(handle());
+        handle_.release();
+    }   
+
+    void close() 
+    {
+        handle_.reset();
     }
 
-    basic_request() = default;
-
-    ~basic_request() noexcept
+    void make(evhttp_request *req,
+        enum evhttp_cmd_type type, const char *uri)
     {
-        A::free(handle());
+        assert(req);
+        detail::check_result("evhttp_make_request", 
+            evhttp_make_request(assert_handle(), req, type, uri));
     }
 
-    // only for ref
-    // this delete copy ctor for buffer&
-    basic_request(const basic_request& other) noexcept
-        : handle_{other.handle()}
+};
+
+using request_handle_type = evhttp_request*;
+
+class request
+{
+public:
+    using handle_type = request_handle_type;
+
+private:
+    handle_type handle_{};
+    evhttp_cmd_type type_{};
+    e4pp::uri uri_{};
+
+    auto assert_handle() const noexcept
     {
-        // copy only for refs
-        static_assert(std::is_same<this_type, request_ref>::value);
+        auto h = handle();
+        assert(h);
+        return h;
     }
 
-    // only for ref
-    // this delete copy ctor for buffer&
-    basic_request& operator=(const basic_request& other) noexcept
+public:
+    request(handle_type handle)
+        : handle_{handle}
+    {   }
+
+    request(evhttp_cmd_type type, const std::string& uri)
+        : handle_{evhttp_request_new([](auto...){}, nullptr)}
+        , type_{type}
+        , uri_{uri}
+    {   }
+
+    auto handle() const noexcept -> handle_type 
     {
-        // copy only for refs
-        static_assert(std::is_same<this_type, request_ref>::value);
-        handle_ = other.handle();
-        return *this;
+        return handle_;
     }
 
-    basic_request(basic_request&& that) noexcept
-    {
-        std::swap(handle_, that.handle_);
+    void push(const char* key, const char* value)
+    {   
+        assert(key && value);
+        auto hdr = assert_handle()->output_headers;
+        detail::check_result("evhttp_add_header",
+            evhttp_add_header(hdr, key, value));
     }
 
-    basic_request& operator=(basic_request&& that) noexcept
+    auto type() const noexcept
     {
-        std::swap(handle_, that.handle_);
-        return *this;
+        return type_;
     }
-
-    explicit basic_request(request_handle_type ptr) noexcept
-        : handle_{ptr}
+    
+    auto release() noexcept
     {
-        static_assert(std::is_same<this_type, request_ref>::value);
-        assert(ptr);
+        return std::exchange(handle_, nullptr);
     }
 };
 

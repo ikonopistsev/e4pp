@@ -15,14 +15,14 @@ public:
     using handle_type = uri_handle_type;
 
 private:
-    struct deallocate
+    struct free_evhttp_uri
     {
         void operator()(handle_type ptr) noexcept 
         { 
             evhttp_uri_free(ptr); 
         }
     };
-    using ptr_type = std::unique_ptr<evhttp_uri, deallocate>;
+    using ptr_type = std::unique_ptr<evhttp_uri, free_evhttp_uri>;
     ptr_type handle_{};
 
     using sv = std::string_view;

@@ -35,14 +35,14 @@ public:
     using handle_type = http_handle_type;
 
 private:
-    struct deallocate
+    struct free_evhttp
     {
         void operator()(handle_type ptr) noexcept
         {
             evhttp_free(ptr); 
         }
     };
-    using ptr_type = std::unique_ptr<evhttp, deallocate>;
+    using ptr_type = std::unique_ptr<evhttp, free_evhttp>;
     ptr_type handle_{};
     vhost* parent_{};
 

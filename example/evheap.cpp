@@ -139,6 +139,12 @@ void test_requeue(e4pp::queue& q1, e4pp::queue& q2)
     });
 }
 
+const void* sin_addr_ptr(auto sa) {
+    return (sa->sa_family == AF_INET) ?
+        static_cast<void*>(&reinterpret_cast<sockaddr_in*>(sa)->sin_addr) :
+        static_cast<void*>(&reinterpret_cast<sockaddr_in6*>(sa)->sin6_addr);
+}
+
 int run()
 {
     e4pp::config cfg{};
@@ -171,14 +177,10 @@ int run()
     e4pp::queue queue{};
     cout() << "queue: " << sizeof(queue) << std::endl;
 
-    e4pp::acceptor_fun on_connect = [](auto fd, auto sa, auto salen) {
+    e4pp::acceptor_fun on_connect = [](auto fd, auto sa, auto) {
         char text[INET6_ADDRSTRLEN];
-        const char* rc = text;
-        auto family = sa->sa_family;
-        const void* addr = (family == AF_INET) ? 
-            static_cast<void*>(&reinterpret_cast<sockaddr_in*>(sa)->sin_addr) :
-            static_cast<void*>(&reinterpret_cast<sockaddr_in6*>(sa)->sin6_addr);
-        rc = evutil_inet_ntop(family, addr, text, sizeof(text));
+        auto rc = evutil_inet_ntop(sa->sa_family,
+            sin_addr_ptr(sa), text, sizeof(text));
         if (rc)
             cout() << "accept connection from " << rc << std::endl;
         else
@@ -243,12 +245,23 @@ int run()
 
 }
 
+struct T
+{ 
+    T& operator=(const T&) = delete;
+};
+
 int main()
 {
 #ifdef _WIN32
     wsa w{2, 2};
 #endif
     e4pp::use_threads();
+
+    // replace stdcerr for test only
+    e4pp::util::stdcerr = []() noexcept -> std::ostream& {
+        return std::cout;
+    };
+
     // make output threadsafe
     // replace util::stdoutput
     e4pp::util::stdoutput = 

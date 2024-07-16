@@ -30,14 +30,14 @@ public:
     using handle_type = buffer_event_handle_type;
 
 private:
-    struct deallocate
+    struct free_bufferevent
     {
         void operator()(handle_type ptr) noexcept 
         { 
             bufferevent_free(ptr); 
         }
     };
-    std::unique_ptr<bufferevent, deallocate> handle_{};
+    std::unique_ptr<bufferevent, free_bufferevent> handle_{};
 
     auto output_handle() const noexcept
     {

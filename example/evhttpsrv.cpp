@@ -8,6 +8,7 @@
 #include <list>
 #include <vector>
 #include <algorithm>
+#include <experimental/array>
 #ifdef _WIN32
 namespace {
 
@@ -48,14 +49,17 @@ int main()
         e4pp::config cfg{e4pp::ev_base_startup_iocp};
 #endif // _WIN32
 
-        e4pp::query q{"key1=val1&key2=val2&key3=val3", {
-            { "key1"sv, [&](auto, auto val) {
-                  cout() << val << std::endl;
-            }},
-            { "key2"sv, [&](auto key, auto val) {
-                  cout() << key << ':' << val << std::endl;
-            }}
-        }};
+        using fn_type = std::function<void(std::string_view, std::string_view)>;
+
+        auto val = e4pp::query::make(
+            "key1"sv, [&](auto, auto val) {
+                cout() << val << std::endl;
+            },
+            "key2"sv, [&](auto key, auto val) {
+                cout() << key << ':' << val << std::endl;
+            });
+        e4pp::query q{"key1=val1111&key2=val2&key3=val33", val};
+        q.parse(std::begin(val), std::end(val));
 
         e4pp::queue queue{cfg};
         auto f = [&](auto, auto){
@@ -102,7 +106,7 @@ int main()
         queue.dispatch(std::chrono::seconds{80});
 
         trace([]{
-            return "bye"sv;
+            cout() << "bye"sv << std::endl;
         });
     }
     catch (const std::exception& e)

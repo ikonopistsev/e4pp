@@ -35,14 +35,14 @@ public:
     using handle_type = queue_handle_type;
 
 private:
-    struct deallocate
+    struct free_event_base
     {
         void operator()(handle_type ptr) noexcept 
         { 
             event_base_free(ptr); 
         }
     };
-    using ptr_type = std::unique_ptr<event_base, deallocate>;
+    using ptr_type = std::unique_ptr<event_base, free_event_base>;
     ptr_type handle_{detail::check_pointer("event_base_new", 
         event_base_new())};
 

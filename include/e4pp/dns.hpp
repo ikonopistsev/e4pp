@@ -25,14 +25,14 @@ public:
     using handle_type = dns_handle_type;
 
 private:
-    struct deallocate
+    struct free_evdns_base
     {
         void operator()(handle_type ptr) noexcept 
         { 
             evdns_base_free(ptr, DNS_ERR_SHUTDOWN);
         }
     };
-    using ptr_type = std::unique_ptr<evdns_base, deallocate>;
+    using ptr_type = std::unique_ptr<evdns_base, free_evdns_base>;
     ptr_type handle_{};
 
 public:

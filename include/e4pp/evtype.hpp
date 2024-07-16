@@ -23,14 +23,14 @@ public:
     using handle_type = event_handle_type;
 
 private:
-    struct deallocate
+    struct free_event
     {
         void operator()(handle_type ptr) noexcept 
         { 
             event_free(ptr); 
         };
     };
-    std::unique_ptr<event, deallocate> handle_{};
+    std::unique_ptr<event, free_event> handle_{};
 
 public:
     heap_event() = default;

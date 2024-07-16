@@ -46,21 +46,20 @@ struct ev_flag_tag final
 {   };
 
 template<class Tag, int Mask>
-class ev_mask_flag final
+struct ev_mask_flag final
 {
-    int val_{};
+    int val{};
 
-public:
     template<int Val>
     constexpr ev_mask_flag(ev_flag_tag<Tag, Val>) noexcept
-        : val_{Val}
+        : val{Val}
     {   
         static_assert((Mask & Val) == Val);
     }
-    
+
     constexpr operator int() const noexcept 
     {
-        return val_;
+        return val;
     }
 };
 
