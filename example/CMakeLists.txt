@@ -8,7 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(evheap evheap.cpp)
 add_executable(evhttpsrv evhttpsrv.cpp)
 
-#target_include_directories(evwsclient PRIVATE "../ext/libevent/include")
+if (E4PP_WITH_PRIVATE)
+  add_subdirectory(private)
+endif()
 
 if (WIN32)
   target_compile_definitions(evheap PRIVATE -D_CRT_SECURE_NO_WARNINGS -DNOMINMAX)

@@ -75,7 +75,7 @@ public:
         return handle();
     }
 
-    operator buffer_ref() const noexcept
+    explicit operator buffer_ref() const noexcept
     {
         return ref();
     }

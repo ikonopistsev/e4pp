@@ -78,15 +78,18 @@ int main()
 
         using fn_type = std::function<void(std::string_view, std::string_view)>;
 
-        auto val = e4pp::query::make(
+        auto val = e4pp::keyval::make(
             "key1"sv, [&](auto, auto val) {
                 cout() << val << std::endl;
+                return true; // Обработали успешно
             },
             "key2"sv, [&](auto key, auto val) {
                 cout() << key << ':' << val << std::endl;
+                return true; // Обработали успешно
             });
-        e4pp::query q{"key1=val1111&key2=val2&key3=val33", val};
-        q.parse(std::begin(val), std::end(val));
+        evkeyvalq hdr{};
+        e4pp::query q{"key1=val1111&key2=val2&key3=val33"};
+        q.parse(val);
         
         e4pp::queue queue{cfg};
         auto f = [&](auto, auto){
