@@ -13,7 +13,8 @@ using request_ptr = evhttp_request*;
 
 namespace detail {
 
-using request_native_fn = void (*)(evhttp_request *, void *);
+using request_native_fn = void (*)(request_ptr, void *);
+using request_error_native_fn = void (*)(evhttp_request_error, void *);
 
 struct request_ref_allocator final
 {
@@ -28,17 +29,24 @@ struct request_ref_allocator final
 
 struct request_allocator final
 {
-    static auto allocate(request_native_fn cb, void *arg) noexcept
+    static auto allocate(request_native_fn fn, 
+        request_error_native_fn err_fn, void *arg) noexcept
+    {
+        auto req = e4pp::detail::check_pointer("evhttp_request_new",
+            evhttp_request_new(fn, arg));
+        evhttp_request_set_error_cb(req, err_fn);
+        return req;
+    }
+
+    static auto allocate(request_native_fn fn, void *arg) noexcept
     {
         return e4pp::detail::check_pointer("evhttp_request_new",
-            evhttp_request_new(cb, arg));
-    }
+            evhttp_request_new(fn, arg));
+    }    
 
     static void free(request_ptr ptr) noexcept
     {
-        if (ptr) {
-            evhttp_request_free(ptr);
-        }
+        evhttp_request_free(ptr);
     }
 };
 
@@ -50,39 +58,6 @@ class basic_request;
 
 using request_ref = basic_request<detail::request_ref_allocator>;
 using request = basic_request<detail::request_allocator>;
-
-// Callback wrappers
-template<class T>
-struct request_cb_fn final
-{
-    using fn_type = void (T::*)(request_ptr req);
-    using err_fn_type = void (T::*)(enum evhttp_request_error error);
-    using self_type = T;
-
-    fn_type fn_{};
-    err_fn_type error_fn_{};
-    T& self_;
-
-    void call(request_ptr req) noexcept
-    {
-        assert(fn_);
-        try {
-            (self_.*fn_)(req);
-        } 
-        catch (...)
-        {   }
-    }
-
-    void call(enum evhttp_request_error error) noexcept
-    {
-        assert(error_fn_);
-        try {
-            (self_.*error_fn_)(error);
-        } 
-        catch (...)
-        {   }
-    }
-};
 
 template<class T>
 struct chunked_cb_fn final
@@ -103,35 +78,6 @@ struct chunked_cb_fn final
         {   }
     }
 };
-
-// Proxy call functions
-template<class T>
-auto proxy_call(request_cb_fn<T>& fn)
-{
-    return std::make_pair(&fn,
-        [](evhttp_request* req, void *arg){
-            assert(arg);
-            try {
-                static_cast<request_cb_fn<T>*>(arg)->call(req);
-            }
-            catch (...)
-            {   }
-        });
-}
-
-template<class T>
-auto proxy_call(error_cb_fn<T>& fn)
-{
-    return std::make_pair(&fn,
-        [](enum evhttp_request_error error, void *arg){
-            assert(arg);
-            try {
-                static_cast<error_cb_fn<T>*>(arg)->call(error);
-            }
-            catch (...)
-            {   }
-        });
-}
 
 template<class T>
 auto proxy_call(chunked_cb_fn<T>& fn)
@@ -164,7 +110,8 @@ private:
         }
     };
     
-    std::unique_ptr<evhttp_request, free_evhttp_request> req_{};
+    std::unique_ptr<evhttp_request, 
+        free_evhttp_request> req_{};
 
     auto assert_handle() const noexcept
     {
@@ -174,7 +121,12 @@ private:
     }
 
 public:
-    basic_request() = default;
+    basic_request()
+    {
+        // Ref types should not create new objects, only capture existing ones
+        static_assert(!std::is_same<this_type, request_ref>::value, 
+                      "request_ref should not create new objects - use explicit constructor with existing pointer");
+    }
 
     ~basic_request() = default;
 
@@ -183,6 +135,9 @@ public:
     explicit basic_request(Args&&... args) noexcept
         : req_{A::allocate(std::forward<Args>(args)...)}
     {
+        // Ref types should not create new objects, only capture existing ones
+        static_assert(!std::is_same<this_type, request_ref>::value, 
+                      "request_ref should not create new objects - use explicit constructor with existing pointer");
         assert(handle());
     }   
 
@@ -234,9 +189,12 @@ public:
         return request_ref(handle());
     }
 
-    void create(void (*cb)(evhttp_request *, void *), void *arg)
+    void create(detail::request_native_fn fn, void *arg)
     {
-        req_.reset(A::allocate(cb, arg));        
+        // Ref types should not create new objects, only capture existing ones
+        static_assert(!std::is_same<this_type, request_ref>::value, 
+                      "request_ref should not create new objects - use explicit constructor with existing pointer");
+        req_.reset(A::allocate(fn, arg));        
     }
 
     operator bool() const noexcept
@@ -327,16 +285,9 @@ public:
     }
 
     template<class F>
-    void on_error(F& fn)
-    {
-        auto pair = proxy_call(fn);
-        evhttp_request_set_error_cb(assert_handle(), pair.second, pair.first);
-    }
-
-    template<class F>
     void on_header(F& fn)
     {
-        auto pair = proxy_call(fn);
+        auto pair = proxy_call(fn);        
         evhttp_request_set_header_cb(assert_handle(), pair.second, pair.first);
     }
 
@@ -349,21 +300,71 @@ public:
 
     auto release() noexcept
     {
+        // Only owning types can release ownership, not refs
+        static_assert(!std::is_same<this_type, request_ref>::value, 
+            "Cannot release() from request_ref - only owning request can transfer ownership");
         return req_.release();
     }
 };
 
-static inline request create_request(detail::request_native_fn cb, void *arg = nullptr)
+// Callback wrappers
+template<class T>
+struct request_fn final
 {
-    return request{cb, arg};
-}
+    using fn_type = void (T::*)(request_ptr req);
+    using self_type = T;
+    using err_fn_type = void (T::*)(enum evhttp_request_error error);
+
+    fn_type fn_{};
+    err_fn_type error_fn_{};
+    T& self_;
+
+    void call(request_ptr req) noexcept
+    {
+        assert(fn_);
+        try {
+            (self_.*fn_)(req);
+        } 
+        catch (...)
+        {   }
+    }
+
+    void call(enum evhttp_request_error error) noexcept
+    {
+        assert(error_fn_);
+        try {
+            (self_.*error_fn_)(error);
+        } 
+        catch (...)
+        {   }
+    }
+};
 
 // Helper functions for creating requests
 template<class T>
-inline request create_request(request_cb_fn<T>& callback)
+request create_request(request_fn<T>& cb)
 {
-    auto pair = proxy_call(callback);
-    return create_request(pair.second, pair.first);
+    // Используем функции-шаблоны вместо static лямбд
+    auto cb_fn = [](evhttp_request *req, void *arg) {
+        assert(arg);
+        try {
+            static_cast<request_fn<T>*>(arg)->call(req);
+        }
+        catch (...)
+        {   }
+    };
+
+    auto err_fn = [](enum evhttp_request_error error, void *arg) {
+        assert(arg);
+        try {
+            static_cast<request_fn<T>*>(arg)->call(error);
+        }
+        catch (...)
+        {   }
+    };
+
+    return (!cb.error_fn_) ? request{cb_fn, &cb} :
+        request{cb_fn, err_fn, &cb};
 }
 
 } // namespace http

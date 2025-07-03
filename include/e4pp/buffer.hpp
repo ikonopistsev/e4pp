@@ -85,7 +85,12 @@ public:
         return buffer_ref(handle());
     }
 
-    basic_buffer() = default;
+    basic_buffer() 
+    {
+        // Only owning types can create new objects, not refs
+        static_assert(!std::is_same<this_type, buffer_ref>::value, 
+                      "buffer_ref cannot create new objects - use explicit constructor with existing pointer");
+    }
 
     ~basic_buffer() noexcept
     {
@@ -132,6 +137,15 @@ public:
     void reset(buffer other)
     {
         *this = std::move(other);
+    }
+
+    // Release ownership of the underlying buffer pointer
+    auto release() noexcept
+    {
+        // Only owning types can release ownership, not refs
+        static_assert(!std::is_same<this_type, buffer_ref>::value, 
+            "Cannot release() from buffer_ref - only owning buffer can transfer ownership");
+        return std::exchange(handle_, A::allocate());
     }
 
     void add_file(int fd, ev_off_t offset, ev_off_t length)
