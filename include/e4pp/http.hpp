@@ -3,6 +3,13 @@
 #include "e4pp/uri.hpp"
 #include "e4pp/vhost.hpp"
 #include "e4pp/query.hpp"
+#include "e4pp/http/connection.hpp"
+
+// Enable wrapper methods in request.hpp
+#define E4PP_QUERY_HPP_INCLUDED
+#define E4PP_BUFFER_HPP_INCLUDED
+
+#include "e4pp/http/request.hpp"
 #include <event2/http_struct.h>
 
 namespace e4pp {
@@ -80,69 +87,6 @@ public:
     {
         e4pp::detail::check_result("evhttp_set_flags",
             evhttp_set_flags(assert_handle(), f));
-    }
-};
-
-using request_handle_type = evhttp_request*;
-
-class request
-{
-public:
-    using handle_type = request_handle_type;
-
-private:
-    handle_type handle_{};
-    evhttp_cmd_type type_{};
-    e4pp::uri uri_{};
-
-    auto assert_handle() const noexcept
-    {
-        auto h = handle();
-        assert(h);
-        return h;
-    }
-
-public:
-    request(handle_type handle)
-        : handle_{handle}
-    {   }
-
-    request(evhttp_cmd_type type, const std::string& uri)
-        : handle_{evhttp_request_new([](auto...){}, nullptr)}
-        , type_{type}
-        , uri_{uri}
-    {   }
-
-    auto handle() const noexcept -> handle_type 
-    {
-        return handle_;
-    }
-
-    void push(const char* key, const char* value)
-    {   
-        assert(key && value);
-        auto kv = keyval_ref{assert_handle()->output_headers};
-        kv.push(key, value);
-    }
-
-    keyval_ref input_headers() const noexcept
-    {
-        return keyval_ref{assert_handle()->input_headers};
-    }
-
-    keyval_ref output_headers() const noexcept
-    {
-        return keyval_ref{assert_handle()->output_headers};
-    }
-
-    auto type() const noexcept
-    {
-        return type_;
-    }
-    
-    auto release() noexcept
-    {
-        return std::exchange(handle_, nullptr);
     }
 };
 

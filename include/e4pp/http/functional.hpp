@@ -8,7 +8,7 @@ namespace http {
 template<class T>
 struct closecb_fn final
 {
-    using fn_type = void (T::*)(connection_ref conn);
+    using fn_type = void (T::*)(connection_ref);
     using self_type = T;
 
     fn_type fn_{};
@@ -36,6 +36,37 @@ auto proxy_call(closecb_fn<T>& fn)
             }
             catch (...)
             {   }
+        });
+}
+
+using closecb_fun = std::function<void(connection_ref)>;
+
+inline auto proxy_call(closecb_fun& fn)
+{
+    return std::make_pair(&fn,
+        [](evhttp_connection* conn, void *arg){
+            assert(arg);
+            auto fn = static_cast<closecb_fun*>(arg);
+            try {
+                (*fn)(connection_ref{conn});
+            }
+            catch (...)
+            {   }
+        });
+}
+
+inline auto proxy_call(closecb_fun&& fn)
+{
+    return std::make_pair(new closecb_fun{std::move(fn)},
+        [](evhttp_connection* conn, void *arg){
+            assert(arg);
+            auto fn = static_cast<closecb_fun*>(arg);
+            try {
+                (*fn)(connection_ref{conn});
+            }
+            catch (...)
+            {   }
+            delete fn;
         });
 }
 

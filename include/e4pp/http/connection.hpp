@@ -2,6 +2,7 @@
 
 #include "e4pp/vhost.hpp"
 #include "e4pp/buffer_event.hpp"
+#include "e4pp/http/request.hpp"
 #include <event2/http_struct.h>
 
 namespace e4pp {
@@ -9,13 +10,13 @@ namespace http {
 
 using connection_ptr = evhttp_connection*;
 
-using connection_flags = e4pp::detail::ev_mask_flag<connection_ptr, EVHTTP_CON_REUSE_CONNECTED_ADDR|
+using connection_flags = e4pp::detail::ev_mask_flag<evhttp_connection, EVHTTP_CON_REUSE_CONNECTED_ADDR|
     EVHTTP_CON_READ_ON_WRITE_ERROR|EVHTTP_CON_LINGERING_CLOSE>;
-constexpr e4pp::detail::ev_flag_tag<connection_ptr, EVHTTP_CON_REUSE_CONNECTED_ADDR>
+constexpr e4pp::detail::ev_flag_tag<evhttp_connection, EVHTTP_CON_REUSE_CONNECTED_ADDR>
     con_reuse_connected_addr{};
-constexpr e4pp::detail::ev_flag_tag<connection_ptr, EVHTTP_CON_READ_ON_WRITE_ERROR>
+constexpr e4pp::detail::ev_flag_tag<evhttp_connection, EVHTTP_CON_READ_ON_WRITE_ERROR>
     con_read_on_write_error{};
-constexpr e4pp::detail::ev_flag_tag<connection_ptr, EVHTTP_CON_LINGERING_CLOSE>
+constexpr e4pp::detail::ev_flag_tag<evhttp_connection, EVHTTP_CON_LINGERING_CLOSE>
     con_lingering_close{};
 
 namespace detail {
@@ -38,6 +39,7 @@ struct connection_allocator final
     {
         assert(base);
         assert(addr);
+        assert(bev);
         return e4pp::detail::check_pointer("evhttp_connection_base_bufferevent_new",
             evhttp_connection_base_bufferevent_new(base, dns, bev, addr, port));
     }
@@ -203,6 +205,12 @@ public:
         assert(req);
         e4pp::detail::check_result("evhttp_make_request", 
             evhttp_make_request(assert_handle(), req, type, uri));
+    }
+
+    void make_request(request req,
+        enum evhttp_cmd_type type, const char *uri)
+    {
+        make_request(req.release(), type, uri);
     }
 };
 

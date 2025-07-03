@@ -247,16 +247,16 @@ public:
         : query{query_str.empty() ? "": query_str.data()}
     {   }
 
-    template<class C>
-    explicit query(const char *query_str, C& val) 
+    template<class Tuple>
+    explicit query(const char *query_str, const Tuple& tuple_pairs) 
         : query(query_str)
     {
-        parse(val);
+        parse(tuple_pairs);
     }
 
-    template<class C>
-    explicit query(std::string_view query_str, C& val)
-        : query{query_str.empty() ? "": query_str.data(), val}
+    template<class Tuple>
+    explicit query(std::string_view query_str, const Tuple& tuple_pairs) 
+        : query{query_str.empty() ? "": query_str.data(), tuple_pairs}
     {   }
 
     template<class Tuple>
