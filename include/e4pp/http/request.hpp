@@ -124,10 +124,17 @@ public:
     basic_request()
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, request_ref>::value, 
-                      "request_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, request_ref>::value);
     }
 
+    explicit basic_request(request_ptr ptr) noexcept
+        : req_{ptr}
+    {
+        // Ref types should not create new objects, only capture existing ones
+        static_assert(std::is_same<this_type, request_ref>::value);
+        assert(ptr);
+    }
+    
     ~basic_request() = default;
 
     // Create request with callback
@@ -136,8 +143,7 @@ public:
         : req_{A::allocate(std::forward<Args>(args)...)}
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, request_ref>::value, 
-                      "request_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, request_ref>::value);
         assert(handle());
     }   
 
@@ -192,8 +198,7 @@ public:
     void create(detail::request_native_fn fn, void *arg)
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, request_ref>::value, 
-                      "request_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, request_ref>::value);
         req_.reset(A::allocate(fn, arg));        
     }
 
@@ -281,37 +286,46 @@ public:
     void on_chunked(F& fn)
     {
         auto pair = proxy_call(fn);
-        evhttp_request_set_chunked_cb(assert_handle(), pair.second, pair.first);
+        evhttp_request_set_chunked_cb(assert_handle(), 
+            pair.second, pair.first);
+    }
+
+    void cancel() noexcept
+    {
+        evhttp_cancel_request(assert_handle());
     }
 
     template<class F>
     void on_header(F& fn)
     {
         auto pair = proxy_call(fn);        
-        evhttp_request_set_header_cb(assert_handle(), pair.second, pair.first);
+        evhttp_request_set_header_cb(assert_handle(), 
+            pair.second, pair.first);
     }
 
     template<class F>
     void on_complete(F& fn)
     {
         auto pair = proxy_call(fn);
-        evhttp_request_set_on_complete_cb(assert_handle(), pair.second, pair.first);
+        evhttp_request_set_on_complete_cb(assert_handle(), 
+            pair.second, pair.first);
     }
 
     auto release() noexcept
     {
         // Only owning types can release ownership, not refs
-        static_assert(!std::is_same<this_type, request_ref>::value, 
-            "Cannot release() from request_ref - only owning request can transfer ownership");
+        static_assert(!std::is_same<this_type, request_ref>::value);
         return req_.release();
     }
 };
+
+using request_fun = std::function<void(request_ref)>;
 
 // Callback wrappers
 template<class T>
 struct request_fn final
 {
-    using fn_type = void (T::*)(request_ptr req);
+    using fn_type = void (T::*)(request_ref req);
     using self_type = T;
     using err_fn_type = void (T::*)(enum evhttp_request_error error);
 
@@ -323,7 +337,7 @@ struct request_fn final
     {
         assert(fn_);
         try {
-            (self_.*fn_)(req);
+            (self_.*fn_)(request_ref{req});
         } 
         catch (...)
         {   }
@@ -363,8 +377,8 @@ request create_request(request_fn<T>& cb)
         {   }
     };
 
-    return (!cb.error_fn_) ? request{cb_fn, &cb} :
-        request{cb_fn, err_fn, &cb};
+    return (!cb.error_fn_) ? request{+cb_fn, &cb} :
+        request{+cb_fn, +err_fn, &cb};
 }
 
 } // namespace http

@@ -119,11 +119,18 @@ public:
     basic_buffer_event()
     {
         // Ref types should not create new objects, only capture existing ones  
-        static_assert(!std::is_same<this_type, buffer_event_ref>::value, 
-                      "buffer_event_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, buffer_event_ref>::value);
     }
 
     ~basic_buffer_event() = default;
+
+    explicit basic_buffer_event(buffer_event_ptr ptr) noexcept
+        : handle_{ptr}
+    {
+        // Ref types should not create new objects, only capture existing ones
+        static_assert(std::is_same<this_type, buffer_event_ref>::value);
+        assert(ptr);
+    }
 
     // Create buffer event
     template<class ... Args>
@@ -131,8 +138,7 @@ public:
         : handle_{A::allocate(std::forward<Args>(args)...)}
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, buffer_event_ref>::value, 
-                      "buffer_event_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, buffer_event_ref>::value);
         assert(handle());
     }
 
@@ -188,8 +194,7 @@ public:
         evutil_socket_t fd, bev_flag opt = bev_close_on_free)
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, buffer_event_ref>::value, 
-                      "buffer_event_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, buffer_event_ref>::value);
         handle_.reset(A::allocate(queue, fd, opt));
     }
 

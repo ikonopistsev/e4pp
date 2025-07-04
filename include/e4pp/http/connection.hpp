@@ -21,6 +21,8 @@ constexpr e4pp::detail::ev_flag_tag<evhttp_connection, EVHTTP_CON_LINGERING_CLOS
 
 namespace detail {
 
+using connection_native_fn = void (*)(evhttp_connection*, void *);
+
 struct connection_ref_allocator final
 {
     constexpr static inline connection_ptr allocate(connection_ptr other) noexcept
@@ -97,11 +99,22 @@ public:
     basic_connection()
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, connection_ref>::value, 
-                      "connection_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, connection_ref>::value);
     }
 
     ~basic_connection() = default;
+
+    // полный конструктор со всеми параметрами
+    // все остальыне его варианты - это упрощения
+    // захватывает bufferevent
+    explicit basic_connection(event_base *base, evdns_base *dns, 
+        bufferevent* bev, const char *addr, ev_uint16_t port) noexcept
+        : conn_{A::allocate(base, dns, bev, addr, port)}
+    {
+        // Ref types should not create new objects, only capture existing ones
+        static_assert(!std::is_same<this_type, connection_ref>::value);
+        assert(handle());
+    }
 
     // Constructor with buffer_event move semantics
     basic_connection(event_base *base, buffer_event bev, 
@@ -109,8 +122,7 @@ public:
         : conn_{A::allocate(base, nullptr, bev.release(), addr.c_str(), port)}
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, connection_ref>::value, 
-                      "connection_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, connection_ref>::value);
         assert(handle());
     }
 
@@ -120,8 +132,7 @@ public:
         : conn_{A::allocate(base, dns, bev.release(), addr.c_str(), port)}
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, connection_ref>::value, 
-                      "connection_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, connection_ref>::value);
         assert(handle());
     }
 
@@ -130,8 +141,7 @@ public:
         : conn_{A::allocate(base, nullptr, addr.c_str(), port)}
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, connection_ref>::value, 
-                      "connection_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, connection_ref>::value);
         assert(handle());
     }
 
@@ -141,8 +151,7 @@ public:
         : conn_{A::allocate(base, dns, addr.c_str(), port)}
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, connection_ref>::value, 
-                      "connection_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, connection_ref>::value);
         assert(handle());
     }
 
@@ -206,8 +215,7 @@ public:
         const std::string& addr, ev_uint16_t port)
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, connection_ref>::value, 
-                      "connection_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, connection_ref>::value);
         conn_.reset(A::allocate(base, dns, addr.c_str(), port));        
     }
 
@@ -215,8 +223,7 @@ public:
         bufferevent* bev, const std::string& addr, ev_uint16_t port)
     {
         // Ref types should not create new objects, only capture existing ones
-        static_assert(!std::is_same<this_type, connection_ref>::value, 
-                      "connection_ref should not create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, connection_ref>::value);
         conn_.reset(A::allocate(base, dns, bev, addr.c_str(), port));        
     }
 
@@ -257,8 +264,7 @@ public:
     auto release() noexcept
     {
         // Only owning types can release ownership, not refs
-        static_assert(!std::is_same<this_type, connection_ref>::value, 
-            "Cannot release() from connection_ref - only owning connection can transfer ownership");
+        static_assert(!std::is_same<this_type, connection_ref>::value);
         return conn_.release();
     }
 
@@ -273,11 +279,16 @@ public:
         return e4pp::buffer_event_ref{buffer_event()};
     }
 
-    template<class F>
-    void set_closecb(F& fn)
+    void on_close(detail::connection_native_fn fn, void *arg)
     {
-        auto pair = proxy_call(fn);
-        evhttp_connection_set_closecb(assert_handle(), pair.second, pair.first);
+        evhttp_connection_set_closecb(assert_handle(), fn, arg);
+    }
+
+    template<class F>
+    void on_close(F&& fn)
+    {
+        auto pair = proxy_call(std::forward<F>(fn));
+        on_close(pair.second, pair.first);
     } 
 
     void set_family(int family)
