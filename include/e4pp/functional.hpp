@@ -1,6 +1,7 @@
 #pragma once
 
 #include "e4pp/buffer.hpp"
+#include "e4pp/buffer_event.hpp"
 #include <functional>
 
 struct evconnlistener;
@@ -252,5 +253,46 @@ auto proxy_call_accept(F& fn)
         });
 }
 
+using data_fn_type = bufferevent_data_cb;
+using event_fn_type = bufferevent_event_cb;
+
+template<class T>
+struct buffer_event_fn
+{
+    data_fn_type read_{};
+    data_fn_type write_{};
+    event_fn_type event_{};
+    T& self_;
+
+    void on_read(buffer_event_ptr ptr) noexcept
+    {
+        assert(read_);
+        try {
+            (self_.*read_)(buffer_event_ref{ptr});
+        } 
+        catch (...)
+        {   }
+    }
+
+    void on_write(buffer_event_ptr ptr) noexcept
+    {
+        assert(write_);
+        try {
+            (self_.*write_)(buffer_event_ref{ptr});
+        } 
+        catch (...)
+        {   }
+    }
+
+    void on_event(buffer_event_ptr ptr, short what) noexcept
+    {
+        assert(event_);
+        try {
+            (self_.*event_)(buffer_event_ref{ptr}, what);
+        } 
+        catch (...)
+        {   }
+    }    
+};
 
 } // namespace e4pp

@@ -174,7 +174,7 @@ public:
         auto val = evhttp_find_header(assert_handle(), key);
         if (val)
         {
-            fn(std::string_view{key}, std::string_view{val});
+            fn(key, val);
             return true;
         }
         return false;

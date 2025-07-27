@@ -88,8 +88,7 @@ public:
     basic_buffer() 
     {
         // Only owning types can create new objects, not refs
-        static_assert(!std::is_same<this_type, buffer_ref>::value, 
-                      "buffer_ref cannot create new objects - use explicit constructor with existing pointer");
+        static_assert(!std::is_same<this_type, buffer_ref>::value);
     }
 
     ~basic_buffer() noexcept
@@ -143,8 +142,7 @@ public:
     auto release() noexcept
     {
         // Only owning types can release ownership, not refs
-        static_assert(!std::is_same<this_type, buffer_ref>::value, 
-            "Cannot release() from buffer_ref - only owning buffer can transfer ownership");
+        static_assert(!std::is_same<this_type, buffer_ref>::value);
         return std::exchange(handle_, A::allocate());
     }
 

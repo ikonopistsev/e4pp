@@ -320,6 +320,46 @@ public:
 };
 
 using request_fun = std::function<void(request_ref)>;
+using request_err_fun = std::function<void(enum evhttp_request_error)>;
+
+inline auto proxy_call(request_fun& fn)
+{
+    return std::make_pair(&fn,
+        [](evhttp_request *req, void *arg){
+            assert(arg);
+            auto fn = static_cast<request_fun*>(arg);
+            try {
+                (*fn)(request_ref{req});
+            }
+            catch (...)
+            {   }
+        });
+}
+
+inline auto proxy_call(request_fun& fn, request_err_fun& err_fn)
+{
+    return std::make_tuple(&fn, &err_fn,
+        [](evhttp_request *req, void *arg){
+            assert(arg);
+            auto pair = static_cast<std::tuple<request_fun*, request_err_fun*>*>(arg);
+            auto fn = std::get<0>(*pair);
+            auto err_fn = std::get<1>(*pair);
+            try {
+                (*fn)(request_ref{req});
+            }
+            catch (...)
+            {   }
+        },
+        [](enum evhttp_request_error error, void *arg){
+            assert(arg);
+            auto err_fn = static_cast<request_err_fun*>(arg);
+            try {
+                (*err_fn)(error);
+            }
+            catch (...)
+            {   }
+        });
+}
 
 // Callback wrappers
 template<class T>
