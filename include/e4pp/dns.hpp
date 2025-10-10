@@ -56,6 +56,11 @@ public:
         return handle_.get();
     }
 
+    handle_type release() noexcept
+    {
+        return handle_.release();
+    }
+
     operator handle_type() const noexcept
     {
         return handle();

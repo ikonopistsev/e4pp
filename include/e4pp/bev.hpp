@@ -130,15 +130,25 @@ public:
         // Derived classes (like SSL) should override
     }
 
+    auto input_handle() const noexcept
+    {
+        return bufferevent_get_input(assert_handle());
+    }    
+
+    auto output_handle() const noexcept
+    {
+        return bufferevent_get_output(assert_handle());
+    }
+
     // Buffer operations
     auto input() const noexcept
     {
-        return buffer_ref(bufferevent_get_input(assert_handle()));
+        return buffer_ref{input_handle()};
     }
 
     auto output() const noexcept
     {
-        return buffer_ref(bufferevent_get_output(assert_handle()));
+        return buffer_ref{output_handle()};
     }
 
     auto queue() const noexcept

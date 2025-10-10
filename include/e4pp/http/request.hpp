@@ -248,16 +248,33 @@ public:
         return evhttp_request_get_output_headers(assert_handle());
     }
 
+    void add_header(const char* key, const char* value) const noexcept
+    {
+        e4pp::detail::check_result("evhttp_add_header",
+            evhttp_add_header(output_headers(), key, value));
+    }
+
     // Buffer access
-    auto input_buffer() const noexcept
+    auto input_handle() const noexcept
     {
         return evhttp_request_get_input_buffer(assert_handle());
     }
 
-    auto output_buffer() const noexcept
+    auto output_handle() const noexcept
     {
         return evhttp_request_get_output_buffer(assert_handle());
     }
+
+    // Buffer access
+    auto input() const noexcept
+    {
+        return buffer_ref{input_handle()};
+    }
+
+    auto output() const noexcept
+    {
+        return buffer_ref{output_handle()};
+    }    
 
     // Connection access
     auto get_connection() const noexcept
@@ -419,6 +436,12 @@ request create_request(request_fn<T>& cb)
 
     return (!cb.error_fn_) ? request{+cb_fn, &cb} :
         request{+cb_fn, +err_fn, &cb};
+}
+
+// Helper functions for creating requests
+request create_request(detail::request_native_fn fn, void *arg)
+{
+    return request{+fn, arg};
 }
 
 } // namespace http

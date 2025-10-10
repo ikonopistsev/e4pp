@@ -11,7 +11,9 @@ namespace detail {
 
 struct buffer_event_base
 {
+    virtual buffer_event_ptr release() noexcept = 0;
     virtual buffer_event_ptr handle() const noexcept = 0;
+    virtual ~buffer_event_base() = default;
 
     auto output_handle() const noexcept
     {
@@ -281,6 +283,11 @@ public:
     {
         std::swap(handle_, other.handle_);
     }
+
+    buffer_event_ptr release() noexcept override
+    {
+        return std::exchange(handle_, nullptr);
+    }
 };
 
 // Generic template for bev-derived types
@@ -364,9 +371,9 @@ public:
     }
     
     // Release ownership
-    T release() noexcept
+    buffer_event_ptr release() noexcept override
     {
-        return std::move(bev_);
+        return bev_.release();
     }
     
     // Swap

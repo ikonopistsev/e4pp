@@ -46,8 +46,9 @@ struct evwslay {
             this_type::on_msg_recv_cb,
         };
 
-        wslay_event_context_client_init(&op.wslay, &cb, &op);
-        return op.wslay;
+        wslay_event_context_ptr rc = nullptr;
+        wslay_event_context_client_init(&rc, &cb, &rc);
+        return rc;
     }
 
     std::unique_ptr<wslay_event_context, detail::wslay_free>
@@ -70,7 +71,8 @@ struct evwslay {
     }
     void setup(bufferevent* b) {
         assert(b);
-        bufferevent_setcb(b, this_type::readcb, this_type::writecb, this_type::eventcb, this);
+        bufferevent_setcb(b, this_type::readcb, 
+            this_type::writecb, this_type::eventcb, this);
         bev = b;
     }
     void forward_msg(wslay_opcode opcode, const uint8_t *ptr, std::size_t len) {
@@ -120,7 +122,11 @@ struct evwslay {
         assert(bev);
         short ev = wslay_event_want_read(wslay) ? EV_READ : 0;
             ev |= wslay_event_want_write(wslay) ? EV_WRITE : 0;
-        bufferevent_enable(bev, ev);
+        if (ev) {
+            bufferevent_enable(bev, ev);
+        } else {
+            bufferevent_disable(bev, EV_READ|EV_WRITE);
+        }
     }
 };
 

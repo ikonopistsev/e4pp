@@ -112,18 +112,19 @@ public:
         // when bufferevent was created with BEV_OPT_CLOSE_ON_FREE
     }
 
-    void connect(dns_handle_type dns, int af,
-                const std::string& hostname, int port) override
-    {
-        assert(dns);
+    // void connect(dns_handle_type dns, int af,
+    //             const std::string& hostname, int port) override
+    // {
+    //     assert(dns);
+    //     // Set expected hostname for certificate verification
+    //     SSL_set1_host(assert_ssl(), hostname.c_str());
+    //     // Set SNI hostname for SSL
+    //     SSL_set_tlsext_host_name(assert_ssl(), hostname.c_str());
         
-        // Set SNI hostname for SSL
-        SSL_set_tlsext_host_name(assert_ssl(), hostname.c_str());
-        
-        e4pp::detail::check_result("bufferevent_socket_connect_hostname",
-            bufferevent_socket_connect_hostname(assert_handle(), dns,
-                af, hostname.c_str(), port));
-    }
+    //     e4pp::detail::check_result("bufferevent_socket_connect_hostname",
+    //         bufferevent_socket_connect_hostname(assert_handle(), dns,
+    //             af, hostname.c_str(), port));
+    // }
 
     // SSL-specific methods
     
