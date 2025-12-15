@@ -390,6 +390,16 @@ struct request_fn final
     err_fn_type error_fn_{};
     T& self_;
 
+    void set(fn_type fn) noexcept
+    {
+        fn_ = fn;
+    }
+
+    void set(err_fn_type fn) noexcept
+    {
+        error_fn_ = fn;
+    }
+
     void call(request_ptr req) noexcept
     {
         assert(fn_);
@@ -439,7 +449,7 @@ request create_request(request_fn<T>& cb)
 }
 
 // Helper functions for creating requests
-request create_request(detail::request_native_fn fn, void *arg)
+static inline request create_request(detail::request_native_fn fn, void *arg)
 {
     return request{+fn, arg};
 }

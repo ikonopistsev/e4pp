@@ -1,19 +1,20 @@
 #pragma once
 
-#include <openssl/sha.h>
+#include <array>
 #include <stdexcept>
+#include <openssl/sha.h>
 
 namespace e4ppx {
 namespace openssl {
 
 struct sha1
 {
-    constexpr static std::size_t size{SHA_DIGEST_LENGTH};
-    unsigned char data[size];
+    constexpr static auto size{SHA_DIGEST_LENGTH};
+    std::array<unsigned char, size> data{};
 
     void operator()(const void *buf, std::size_t size) noexcept
     {
-        SHA1(reinterpret_cast<const unsigned char*>(buf), size, data);
+        SHA1(reinterpret_cast<const unsigned char*>(buf), size, data.data());
     }
 
     template<class T>
@@ -25,12 +26,12 @@ struct sha1
 
 struct sha256
 {
-    constexpr static std::size_t size{SHA256_DIGEST_LENGTH};
-    unsigned char data[size];
+    constexpr static auto size{SHA256_DIGEST_LENGTH};
+    std::array<unsigned char, size> data{};
 
     void operator()(const void *buf, std::size_t size) noexcept
     {
-        SHA256(reinterpret_cast<const unsigned char*>(buf), size, data);
+        SHA256(reinterpret_cast<const unsigned char*>(buf), size, data.data());
     }
 
     template<class T>

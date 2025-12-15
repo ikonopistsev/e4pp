@@ -315,6 +315,28 @@ public:
     {
         make_request(req.release(), type, uri);
     }
+
+    void set_connect_timeout(const timeval& tv) noexcept
+    {
+        evhttp_connection_set_connect_timeout_tv(assert_handle(), &tv);
+    }
+
+    template<class Rep, class Period>
+    void set_connect_timeout(std::chrono::duration<Rep, Period> timeout) noexcept
+    {
+        set_connect_timeout(make_timeval(timeout));
+    }    
+    
+    void set_read_timeout(const timeval& tv) noexcept
+    {
+        evhttp_connection_set_read_timeout_tv(assert_handle(), &tv);
+    }
+
+    template<class Rep, class Period>
+    void set_read_timeout(std::chrono::duration<Rep, Period> timeout) noexcept
+    {
+        set_read_timeout(make_timeval(timeout));
+    }
 };
 
 } // namespace http
